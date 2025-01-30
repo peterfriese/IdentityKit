@@ -1,0 +1,146 @@
+//
+// EmailPasswordAuthenticationView.swift
+// IdentityKit
+//
+// Created by Peter Friese on 28.01.25.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import SwiftUI
+
+private enum FocusableField: Hashable {
+  case email
+  case password
+  case confirmPassword
+}
+
+extension EnvironmentValues {
+  @Entry var authenticationFlow: AuthenticationFlow = .login
+}
+
+struct EmailPasswordAuthenticationView {
+  // MARK: - Dependencies
+  @Environment(AuthenticationService.self) private var authenticationService
+  @Environment(\.authenticationFlow) private var flow
+
+  // MARK: - Private properties
+  @State private var email = ""
+  @State private var password = ""
+  @State private var confirmPassword = ""
+
+  @State private var errorMesage = ""
+
+  @FocusState private var focus: FocusableField?
+
+  private var isValid: Bool {
+    return if flow == .login {
+      !email.isEmpty && !password.isEmpty
+    } else {
+      !email.isEmpty && !password.isEmpty && password == confirmPassword
+    }
+  }
+
+  private func signInWithEmailPassword() {
+    errorMesage = "An error occurred while signing in. Please try again later."
+  }
+
+  private func signUpWithEmailPassword() {
+    errorMesage = "An error occurred while signing up. Please try again later."
+  }
+
+
+}
+
+extension EmailPasswordAuthenticationView: View {
+  var body: some View {
+    VStack {
+      LabeledContent {
+        TextField("Email", text: $email)
+          .textInputAutocapitalization(.never)
+          .disableAutocorrection(true)
+          .focused($focus, equals: .email)
+          .submitLabel(.next)
+          .onSubmit {
+            self.focus = .password
+          }
+      } label: {
+        Image(systemName: "at")
+      }
+      .padding(.vertical, 6)
+      .background(Divider(), alignment: .bottom)
+      .padding(.bottom, 4)
+
+      LabeledContent {
+        SecureField("Password", text: $password)
+          .focused($focus, equals: .password)
+          .submitLabel(.go)
+          .onSubmit {
+            signInWithEmailPassword()
+          }
+      } label: {
+        Image(systemName: "lock")
+      }
+      .padding(.vertical, 6)
+      .background(Divider(), alignment: .bottom)
+      .padding(.bottom, 8)
+
+      if flow == .login {
+        Button("Forgot password?") {
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+      }
+
+      if flow == .signUp {
+        LabeledContent {
+          SecureField("Confirm password", text: $confirmPassword)
+            .focused($focus, equals: .confirmPassword)
+            .submitLabel(.go)
+            .onSubmit {
+              signUpWithEmailPassword()
+            }
+        } label: {
+          Image(systemName: "lock")
+        }
+        .padding(.vertical, 6)
+        .background(Divider(), alignment: .bottom)
+        .padding(.bottom, 8)
+      }
+
+      Button(action: {
+        if flow == .login { signInWithEmailPassword() }
+        else { signUpWithEmailPassword() }
+      }) {
+        if authenticationService.authenticationState != .authenticating {
+          Text(flow == .login ? "Log in with password" : "Sign up")
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+        } else {
+          ProgressView()
+            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+        }
+      }
+      .disabled(!isValid)
+      .padding([.top, .bottom], 8)
+      .frame(maxWidth: .infinity)
+      .buttonStyle(.borderedProminent)
+    }
+    .preference(key: AuthenticationErrorMessagePreferenceKey.self, value: errorMesage)
+  }
+}
+
+#Preview {
+  EmailPasswordAuthenticationView()
+    .environment(AuthenticationService())
+}
