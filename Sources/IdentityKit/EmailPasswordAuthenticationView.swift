@@ -28,10 +28,12 @@ extension EnvironmentValues {
   @Entry var authenticationFlow: AuthenticationFlow = .login
 }
 
+@MainActor
 struct EmailPasswordAuthenticationView {
   // MARK: - Dependencies
   @Environment(AuthenticationService.self) private var authenticationService
   @Environment(\.authenticationFlow) private var flow
+  @Environment(\.dismiss) private var dismiss
 
   // MARK: - Private properties
   @State private var email = ""
@@ -50,15 +52,25 @@ struct EmailPasswordAuthenticationView {
     }
   }
 
-  private func signInWithEmailPassword() {
-    errorMesage = "An error occurred while signing in. Please try again later."
+  private func signInWithEmailPassword() async {
+    do {
+      try await authenticationService.signIn(withEmail: email, password: password)
+      dismiss()
+    }
+    catch {
+      errorMesage = error.localizedDescription
+    }
   }
 
-  private func signUpWithEmailPassword() {
-    errorMesage = "An error occurred while signing up. Please try again later."
+  private func signUpWithEmailPassword() async {
+    do {
+      try await authenticationService.signUp(withEmail: email, password: password)
+      dismiss()
+    }
+    catch {
+      errorMesage = error.localizedDescription
+    }
   }
-
-
 }
 
 extension EmailPasswordAuthenticationView: View {
@@ -85,7 +97,7 @@ extension EmailPasswordAuthenticationView: View {
           .focused($focus, equals: .password)
           .submitLabel(.go)
           .onSubmit {
-            signInWithEmailPassword()
+            Task { await signInWithEmailPassword() }
           }
       } label: {
         Image(systemName: "lock")
@@ -106,7 +118,7 @@ extension EmailPasswordAuthenticationView: View {
             .focused($focus, equals: .confirmPassword)
             .submitLabel(.go)
             .onSubmit {
-              signUpWithEmailPassword()
+              Task { await signUpWithEmailPassword() }
             }
         } label: {
           Image(systemName: "lock")
@@ -117,8 +129,10 @@ extension EmailPasswordAuthenticationView: View {
       }
 
       Button(action: {
-        if flow == .login { signInWithEmailPassword() }
-        else { signUpWithEmailPassword() }
+        Task {
+          if flow == .login { await signInWithEmailPassword() }
+          else { await signUpWithEmailPassword() }
+        }
       }) {
         if authenticationService.authenticationState != .authenticating {
           Text(flow == .login ? "Log in with password" : "Sign up")
@@ -142,5 +156,5 @@ extension EmailPasswordAuthenticationView: View {
 
 #Preview {
   EmailPasswordAuthenticationView()
-    .environment(AuthenticationService())
+    .environment(AuthenticationService.shared)
 }

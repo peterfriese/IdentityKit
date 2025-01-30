@@ -12,9 +12,15 @@ let package = Package(
       name: "IdentityKit",
       targets: ["IdentityKit"])
   ],
+  dependencies: [
+    .package(url: "https://github.com/firebase/firebase-ios-sdk", from: "11.0.0")
+  ],
   targets: [
     .target(
-      name: "IdentityKit"),
+      name: "IdentityKit",
+      dependencies: [
+        .product(name: "FirebaseAuth", package: "firebase-ios-sdk")
+      ]),
     .testTarget(
       name: "IdentityKitTests",
       dependencies: ["IdentityKit"]

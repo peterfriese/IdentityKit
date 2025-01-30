@@ -32,7 +32,7 @@ enum AuthenticationFlow {
   case signUp
 }
 
-struct AuthenticationScreen {
+public struct AuthenticationScreen {
   // MARK: - Dependencies
   @Environment(AuthenticationService.self) private var authenticationService
 
@@ -45,10 +45,13 @@ struct AuthenticationScreen {
   }
 
   @State private var errorMessage = ""
+
+  public init() {
+  }
 }
 
 extension AuthenticationScreen: View {
-  var body: some View {
+  public var body: some View {
     VStack {
       ZStack {
         Text("Login")
@@ -99,5 +102,5 @@ extension AuthenticationScreen: View {
 
 #Preview {
   AuthenticationScreen()
-    .environment(AuthenticationService())
+    .environment(AuthenticationService.shared)
 }
