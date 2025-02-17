@@ -19,6 +19,23 @@
 @preconcurrency import FirebaseAuth
 import Observation
 
+public enum AuthenticationMode: CustomStringConvertible {
+  case signIn
+  case signUp
+  case `continue`
+
+  public var description: String {
+    switch self {
+    case .signIn:
+      return "Sign in with"
+    case .signUp:
+      return "Sign up with"
+    case .continue:
+      return "Continue with"
+    }
+  }
+}
+
 public enum AuthenticationState {
   case unauthenticated
   case authenticating
@@ -34,8 +51,18 @@ final public class AuthenticationService {
   }
   public var currentUser: User?
 
+  var errorMessage = ""
+
   private init() {
     setupAuthenticationListener()
+  }
+
+  public static func enableKeychainSharing(with group: String) {
+    do {
+      try Auth.auth().useUserAccessGroup(group)
+    } catch let error as NSError {
+      print("Error changing user access group: %@", error)
+    }
   }
 
   public static let shared = AuthenticationService()
@@ -44,31 +71,6 @@ final public class AuthenticationService {
     Auth.auth().addStateDidChangeListener { [weak self] _, user in
       self?.currentUser = user
       self?.authenticationState = user == nil ? .unauthenticated : .authenticated
-    }
-  }
-
-}
-
-extension AuthenticationService {
-  public func signIn(withEmail email: String, password: String) async throws {
-    authenticationState = .authenticating
-    do {
-      try await Auth.auth().signIn(withEmail: email, password: password)
-    }
-    catch {
-      authenticationState = .unauthenticated
-      throw error
-    }
-  }
-
-  public func signUp(withEmail email: String, password: String) async throws {
-    authenticationState = .authenticating
-    do {
-      try await Auth.auth().createUser(withEmail: email, password: password)
-    }
-    catch {
-      authenticationState = .unauthenticated
-      throw error
     }
   }
 
