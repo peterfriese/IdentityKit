@@ -64,9 +64,12 @@ struct AuthenticateWithGoogleButton: View {
     .disabled(isAuthenticating)
     .task(id: isAuthenticating) {
       guard isAuthenticating else { return }
-//      await authenticationService.signInWithGoogle()
-      isAuthenticating = false
-      dismiss()
+      defer { isAuthenticating = false }
+
+      let success = true // await authenticationService.signInWithApple()
+      if success {
+        dismiss()
+      }
     }
   }
 }
