@@ -21,7 +21,7 @@ import Observation
 import CryptoKit
 import AuthenticationServices
 
-class AuthenticateWithAppleHandler: NSObject, ASAuthorizationControllerDelegate {
+class AuthenticateWithAppleHandler: NSObject {
   private var continuation: CheckedContinuation<Result<(ASAuthorizationAppleIDCredential, String), Error>, Never>?
   private var currentNonce: String?
 
@@ -47,18 +47,22 @@ class AuthenticateWithAppleHandler: NSObject, ASAuthorizationControllerDelegate 
       authorizationController.performRequests()
     }
   }
+}
 
+extension AuthenticateWithAppleHandler: ASAuthorizationControllerDelegate {
   func authorizationController(controller: ASAuthorizationController,
                                didCompleteWithAuthorization authorization: ASAuthorization) {
-    if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
-       let nonce = currentNonce {
-      guard let nonce = currentNonce else {
-        fatalError("Invalid state: A login callback was received, but no login request was sent.")
+    if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+      if let nonce = currentNonce {
+        continuation?.resume(returning: .success((appleIDCredential, nonce)))
+      } else {
+        continuation?.resume(returning: .failure(NSError(domain: "", code: -1,
+                                                         userInfo: [NSLocalizedDescriptionKey: "Invalid state: A login callback was received, but no login request was sent."])))
       }
-      continuation?.resume(returning: .success((appleIDCredential, nonce)))
     }
     else {
-      continuation?.resume(returning: .failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Could not get Apple ID credentials"])))
+      continuation?.resume(returning: .failure(NSError(domain: "", code: -1,
+                                                       userInfo: [NSLocalizedDescriptionKey: "Could not get Apple ID credentials"])))
     }
     continuation = nil
   }

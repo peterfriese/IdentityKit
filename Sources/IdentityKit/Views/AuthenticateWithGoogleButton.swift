@@ -21,6 +21,7 @@ import SwiftUI
 struct AuthenticateWithGoogleButton: View {
   // MARK: - Dependencies
   @Environment(AuthenticationService.self) private var authenticationService
+  @Environment(\.dismiss) var dismiss
 
   // MARK: - State
   @State private var isAuthenticating = false
@@ -43,7 +44,7 @@ struct AuthenticateWithGoogleButton: View {
             .scaledToFit()
             .frame(width: 32, height: 32)
 
-          Text("\(mode) Google")
+          Text("\(mode) with Google")
             .font(.body.weight(.medium))
         }
         .frame(maxWidth: .infinity)
@@ -65,6 +66,7 @@ struct AuthenticateWithGoogleButton: View {
       guard isAuthenticating else { return }
 //      await authenticationService.signInWithGoogle()
       isAuthenticating = false
+      dismiss()
     }
   }
 }

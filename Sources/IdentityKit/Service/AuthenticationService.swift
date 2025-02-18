@@ -27,11 +27,11 @@ public enum AuthenticationMode: CustomStringConvertible {
   public var description: String {
     switch self {
     case .signIn:
-      return "Sign in with"
+      return "Sign in"
     case .signUp:
-      return "Sign up with"
+      return "Sign up"
     case .continue:
-      return "Continue with"
+      return "Continue"
     }
   }
 }
@@ -45,36 +45,50 @@ public enum AuthenticationState {
 @MainActor
 @Observable
 final public class AuthenticationService {
-  public var authenticationState: AuthenticationState = .unauthenticated
-  public var isAuthenticated: Bool {
-    authenticationState == .authenticated
-  }
-  public var currentUser: User?
-
-  var errorMessage = ""
+  public static let shared = AuthenticationService()
 
   private init() {
     setupAuthenticationListener()
   }
 
-  public static func enableKeychainSharing(with group: String) {
-    do {
-      try Auth.auth().useUserAccessGroup(group)
-    } catch let error as NSError {
-      print("Error changing user access group: %@", error)
+  deinit {
+    if let handle = authStateHandle {
+      Auth.auth().removeStateDidChangeListener(handle)
+      authStateHandle = nil
     }
   }
 
-  public static let shared = AuthenticationService()
+  private nonisolated(unsafe) var authStateHandle: AuthStateDidChangeListenerHandle? {
+    willSet {
+      if let handle = authStateHandle {
+        Auth.auth().removeStateDidChangeListener(handle)
+      }
+    }
+  }
 
   private func setupAuthenticationListener() {
-    Auth.auth().addStateDidChangeListener { [weak self] _, user in
+    authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
       self?.currentUser = user
       self?.authenticationState = user == nil ? .unauthenticated : .authenticated
     }
   }
 
+  public var authenticationState: AuthenticationState = .unauthenticated
+
+  public var isAuthenticated: Bool {
+    authenticationState == .authenticated
+  }
+
+  public var currentUser: User?
+
+  var errorMessage = ""
+
+  public static func enableKeychainSharing(with group: String) throws {
+    try Auth.auth().useUserAccessGroup(group)
+  }
+
   public func signOut() throws {
     try Auth.auth().signOut()
   }
+
 }
