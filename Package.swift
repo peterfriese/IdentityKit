@@ -20,7 +20,8 @@ let package = Package(
       name: "IdentityKit",
       dependencies: [
         .product(name: "FirebaseAuth", package: "firebase-ios-sdk")
-      ]),
+      ]
+    ),
     .testTarget(
       name: "IdentityKitTests",
       dependencies: ["IdentityKit"]

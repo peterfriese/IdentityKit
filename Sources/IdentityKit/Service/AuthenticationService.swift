@@ -19,6 +19,23 @@
 @preconcurrency import FirebaseAuth
 import Observation
 
+public enum AuthenticationMode: CustomStringConvertible {
+  case signIn
+  case signUp
+  case `continue`
+
+  public var description: String {
+    switch self {
+    case .signIn:
+      return "Sign in"
+    case .signUp:
+      return "Sign up"
+    case .continue:
+      return "Continue"
+    }
+  }
+}
+
 public enum AuthenticationState {
   case unauthenticated
   case authenticating
@@ -28,51 +45,50 @@ public enum AuthenticationState {
 @MainActor
 @Observable
 final public class AuthenticationService {
-  public var authenticationState: AuthenticationState = .unauthenticated
-  public var isAuthenticated: Bool {
-    authenticationState == .authenticated
-  }
-  public var currentUser: User?
+  public static let shared = AuthenticationService()
 
   private init() {
     setupAuthenticationListener()
   }
 
-  public static let shared = AuthenticationService()
+  deinit {
+    if let handle = authStateHandle {
+      Auth.auth().removeStateDidChangeListener(handle)
+      authStateHandle = nil
+    }
+  }
+
+  private nonisolated(unsafe) var authStateHandle: AuthStateDidChangeListenerHandle? {
+    willSet {
+      if let handle = authStateHandle {
+        Auth.auth().removeStateDidChangeListener(handle)
+      }
+    }
+  }
 
   private func setupAuthenticationListener() {
-    Auth.auth().addStateDidChangeListener { [weak self] _, user in
+    authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
       self?.currentUser = user
       self?.authenticationState = user == nil ? .unauthenticated : .authenticated
     }
   }
 
-}
+  public var authenticationState: AuthenticationState = .unauthenticated
 
-extension AuthenticationService {
-  public func signIn(withEmail email: String, password: String) async throws {
-    authenticationState = .authenticating
-    do {
-      try await Auth.auth().signIn(withEmail: email, password: password)
-    }
-    catch {
-      authenticationState = .unauthenticated
-      throw error
-    }
+  public var isAuthenticated: Bool {
+    authenticationState == .authenticated
   }
 
-  public func signUp(withEmail email: String, password: String) async throws {
-    authenticationState = .authenticating
-    do {
-      try await Auth.auth().createUser(withEmail: email, password: password)
-    }
-    catch {
-      authenticationState = .unauthenticated
-      throw error
-    }
+  public var currentUser: User?
+
+  var errorMessage = ""
+
+  public static func enableKeychainSharing(with group: String) throws {
+    try Auth.auth().useUserAccessGroup(group)
   }
 
   public func signOut() throws {
     try Auth.auth().signOut()
   }
+
 }

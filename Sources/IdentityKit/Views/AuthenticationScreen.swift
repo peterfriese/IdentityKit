@@ -17,6 +17,7 @@
 // limitations under the License.
 
 import SwiftUI
+import _AuthenticationServices_SwiftUI
 
 // See https://medium.com/@mhd.nidal.mhd/view-validation-in-swiftui-ba02d2b59f5a for a full-blown validation solution
 struct AuthenticationErrorMessagePreferenceKey: PreferenceKey {
@@ -74,6 +75,23 @@ extension AuthenticationScreen: View {
           Text(errorMessage)
             .foregroundColor(Color(UIColor.systemRed))
         }
+      }
+
+      HStack {
+        VStack { Divider() }
+        Text("or")
+        VStack { Divider() }
+      }
+
+//      HStack(spacing: 16) {
+//        AuthenticateWithAppleButton()
+//        AuthenticateWithGoogleButton()
+//      }
+//      .frame(maxWidth: .infinity)
+
+      VStack(spacing: 16) {
+        AuthenticateWithAppleButton(flow == .login ? .signIn : .signUp)
+        AuthenticateWithGoogleButton(flow == .login ? .signIn : .signUp)
       }
 
       HStack {
