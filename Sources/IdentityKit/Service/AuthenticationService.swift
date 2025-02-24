@@ -19,6 +19,12 @@
 @preconcurrency import FirebaseAuth
 import Observation
 
+public enum AuthenticationOperationType: String {
+  case signIn
+  case signUp
+  case deleteAccount
+}
+
 public enum AuthenticationMode: CustomStringConvertible {
   case signIn
   case signUp

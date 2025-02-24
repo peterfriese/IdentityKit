@@ -111,4 +111,47 @@ extension AuthenticationService {
       }
     }
   }
+
+  public func deleteAccount() async -> Bool {
+    let handler = AuthenticateWithAppleHandler()
+    let result = await handler.authenticate()
+
+    switch result {
+    case .failure(let error):
+      errorMessage = error.localizedDescription
+      return false
+
+    case .success(let (appleIDCredential, nonce)):
+      guard let appleIDToken = appleIDCredential.identityToken else {
+        print("Unable to fetch identify token.")
+        return false
+      }
+
+      guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
+        print("Unable to serialise token string from data: \(appleIDToken.debugDescription)")
+        return false
+      }
+
+      guard let appleAuthCode = appleIDCredential.authorizationCode else {
+        print("Unable to fetch authorization code")
+        return false
+      }
+
+      guard let authCodeString = String(data: appleAuthCode, encoding: .utf8) else {
+        print("Unable to serialize auth code string from data: \(appleAuthCode.debugDescription)")
+        return false
+      }
+
+      do {
+        try await Auth.auth().revokeToken(withAuthorizationCode: authCodeString)
+        try await currentUser?.delete()
+        try await Auth.auth().signOut()
+        return true
+      }
+      catch {
+        print(error.localizedDescription)
+        return false
+      }
+    }
+  }
 }

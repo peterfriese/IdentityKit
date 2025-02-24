@@ -21,6 +21,7 @@ import IdentityKit
 
 struct ContentView: View {
   @State var presentingAuthenticationDialog = false
+  @State var presentingDeleteAccountConfirmation = false
   @State var authenticationService = AuthenticationService.shared
 
   var userName: String {
@@ -31,6 +32,7 @@ struct ContentView: View {
     VStack {
       Text("👋🏻 Hello \(authenticationService.isAuthenticated ? userName : "")!")
       Text("You are \(authenticationService.isAuthenticated ? "" : "not") signed in")
+
       Button("Sign \(authenticationService.isAuthenticated ? "out" : "in")") {
         if authenticationService.isAuthenticated {
           do {
@@ -44,11 +46,25 @@ struct ContentView: View {
           presentingAuthenticationDialog.toggle()
         }
       }
+
+      if authenticationService.isAuthenticated {
+        Button("Delete account", role: .destructive) {
+          presentingDeleteAccountConfirmation.toggle()
+        }
+      }
     }
     .sheet(isPresented: $presentingAuthenticationDialog) {
       AuthenticationScreen()
         .environment(authenticationService)
     }
+    .sheet(isPresented: $presentingDeleteAccountConfirmation) {
+      AccountDeletionConfirmationDialog {
+        Task {
+          await authenticationService.deleteAccount()
+        }
+      }
+    }
+
   }
 }
 
