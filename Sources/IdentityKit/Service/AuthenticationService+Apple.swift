@@ -21,60 +21,6 @@ import Observation
 import CryptoKit
 import AuthenticationServices
 
-class AuthenticateWithAppleHandler: NSObject {
-  private var continuation: CheckedContinuation<Result<(ASAuthorizationAppleIDCredential, String), Error>, Never>?
-  private var currentNonce: String?
-
-  func authenticate() async -> Result<(ASAuthorizationAppleIDCredential, String), Error> {
-    await withCheckedContinuation { continuation in
-      self.continuation = continuation
-
-      let appleIDProvider = ASAuthorizationAppleIDProvider()
-      let request = appleIDProvider.createRequest()
-      request.requestedScopes = [.fullName, .email]
-
-      do {
-        let nonce = try CryptoUtils.randomNonceString()
-        currentNonce = nonce
-        request.nonce = CryptoUtils.sha256(nonce)
-      }
-      catch {
-        print("Error when creating a nonce: \(error.localizedDescription)")
-      }
-
-      let authorizationController = ASAuthorizationController(authorizationRequests: [request])
-      authorizationController.delegate = self
-      authorizationController.performRequests()
-    }
-  }
-}
-
-extension AuthenticateWithAppleHandler: ASAuthorizationControllerDelegate {
-  func authorizationController(controller: ASAuthorizationController,
-                               didCompleteWithAuthorization authorization: ASAuthorization) {
-    if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
-      if let nonce = currentNonce {
-        continuation?.resume(returning: .success((appleIDCredential, nonce)))
-      } else {
-        continuation?.resume(returning: .failure(NSError(domain: "", code: -1,
-                                                         userInfo: [NSLocalizedDescriptionKey: "Invalid state: A login callback was received, but no login request was sent."])))
-      }
-    }
-    else {
-      continuation?.resume(returning: .failure(NSError(domain: "", code: -1,
-                                                       userInfo: [NSLocalizedDescriptionKey: "Could not get Apple ID credentials"])))
-    }
-    continuation = nil
-  }
-
-  func authorizationController(controller: ASAuthorizationController,
-                               didCompleteWithError error: Error) {
-    continuation?.resume(returning: .failure(error))
-    continuation = nil
-  }
-}
-
-
 extension AuthenticationService {
   @MainActor
   func signInWithApple() async -> Bool {
