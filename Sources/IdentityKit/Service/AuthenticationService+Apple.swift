@@ -21,137 +21,42 @@ import Observation
 import CryptoKit
 import AuthenticationServices
 
-class AuthenticateWithAppleHandler: NSObject {
-  private var continuation: CheckedContinuation<Result<(ASAuthorizationAppleIDCredential, String), Error>, Never>?
-  private var currentNonce: String?
-
-  func authenticate() async -> Result<(ASAuthorizationAppleIDCredential, String), Error> {
-    await withCheckedContinuation { continuation in
-      self.continuation = continuation
-
-      let appleIDProvider = ASAuthorizationAppleIDProvider()
-      let request = appleIDProvider.createRequest()
-      request.requestedScopes = [.fullName, .email]
-
-      do {
-        let nonce = try CryptoUtils.randomNonceString()
-        currentNonce = nonce
-        request.nonce = CryptoUtils.sha256(nonce)
-      }
-      catch {
-        print("Error when creating a nonce: \(error.localizedDescription)")
-      }
-
-      let authorizationController = ASAuthorizationController(authorizationRequests: [request])
-      authorizationController.delegate = self
-      authorizationController.performRequests()
-    }
+extension Data {
+  var utf8String: String? {
+    return String(data: self, encoding: .utf8)
   }
 }
 
-extension AuthenticateWithAppleHandler: ASAuthorizationControllerDelegate {
-  func authorizationController(controller: ASAuthorizationController,
-                               didCompleteWithAuthorization authorization: ASAuthorization) {
-    if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
-      if let nonce = currentNonce {
-        continuation?.resume(returning: .success((appleIDCredential, nonce)))
-      } else {
-        continuation?.resume(returning: .failure(NSError(domain: "", code: -1,
-                                                         userInfo: [NSLocalizedDescriptionKey: "Invalid state: A login callback was received, but no login request was sent."])))
-      }
-    }
-    else {
-      continuation?.resume(returning: .failure(NSError(domain: "", code: -1,
-                                                       userInfo: [NSLocalizedDescriptionKey: "Could not get Apple ID credentials"])))
-    }
-    continuation = nil
+extension ASAuthorizationAppleIDCredential {
+  var authorizationCodeString: String? {
+    return authorizationCode?.utf8String
   }
 
-  func authorizationController(controller: ASAuthorizationController,
-                               didCompleteWithError error: Error) {
-    continuation?.resume(returning: .failure(error))
-    continuation = nil
+  var idTokenString: String? {
+    return identityToken?.utf8String
   }
 }
-
 
 extension AuthenticationService {
   @MainActor
-  func signInWithApple() async -> Bool {
-    let handler = AuthenticateWithAppleHandler()
-    let result = await handler.authenticate()
+  @discardableResult
+  func signInWithApple() async throws -> Bool {
+    let (appleIDCredential, nonce) = try await authenticateWithApple()
 
-    switch result {
-    case .failure(let error):
-      errorMessage = error.localizedDescription
-      return false
-
-    case .success(let (appleIDCredential, nonce)):
-      guard let appleIDToken = appleIDCredential.identityToken else {
-        print("Unable to fetch identify token.")
-        return false
-      }
-
-      guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
-        print("Unable to serialise token string from data: \(appleIDToken.debugDescription)")
-        return false
-      }
-
-      let credential = OAuthProvider.appleCredential(withIDToken: idTokenString,
-                                                     rawNonce: nonce,
-                                                     fullName: appleIDCredential.fullName)
-
-      do {
-        try await Auth.auth().signIn(with: credential)
-        return true
-      }
-      catch {
-        print("Error authenticating: \(error.localizedDescription)")
-        return false
-      }
+    guard let idTokenString = appleIDCredential.idTokenString else {
+      throw AuthenticationError.missingAppleIDToken
     }
-  }
 
-  public func deleteAccount() async -> Bool {
-    let handler = AuthenticateWithAppleHandler()
-    let result = await handler.authenticate()
+    let credential = OAuthProvider.appleCredential(withIDToken: idTokenString,
+                                                   rawNonce: nonce,
+                                                   fullName: appleIDCredential.fullName)
 
-    switch result {
-    case .failure(let error):
-      errorMessage = error.localizedDescription
-      return false
-
-    case .success(let (appleIDCredential, nonce)):
-      guard let appleIDToken = appleIDCredential.identityToken else {
-        print("Unable to fetch identify token.")
-        return false
-      }
-
-      guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
-        print("Unable to serialise token string from data: \(appleIDToken.debugDescription)")
-        return false
-      }
-
-      guard let appleAuthCode = appleIDCredential.authorizationCode else {
-        print("Unable to fetch authorization code")
-        return false
-      }
-
-      guard let authCodeString = String(data: appleAuthCode, encoding: .utf8) else {
-        print("Unable to serialize auth code string from data: \(appleAuthCode.debugDescription)")
-        return false
-      }
-
-      do {
-        try await Auth.auth().revokeToken(withAuthorizationCode: authCodeString)
-        try await currentUser?.delete()
-        try await Auth.auth().signOut()
-        return true
-      }
-      catch {
-        print(error.localizedDescription)
-        return false
-      }
+    do {
+      try await Auth.auth().signIn(with: credential)
+      return true
+    }
+    catch {
+      throw AuthenticationError.signInFailed(underlying: error)
     }
   }
 }

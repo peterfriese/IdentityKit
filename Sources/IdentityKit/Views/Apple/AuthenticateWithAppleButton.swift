@@ -63,9 +63,12 @@ struct AuthenticateWithAppleButton: View {
       guard isAuthenticating else { return }
       defer { isAuthenticating = false }
 
-      let success = await authenticationService.signInWithApple()
-      if success {
+      do {
+        try await authenticationService.signInWithApple()
         dismiss()
+      }
+      catch {
+        authenticationService.errorMessage = error.localizedDescription
       }
     }
   }

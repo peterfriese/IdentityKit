@@ -23,6 +23,7 @@ struct ContentView: View {
   @State var presentingAuthenticationDialog = false
   @State var presentingDeleteAccountConfirmation = false
   @State var authenticationService = AuthenticationService.shared
+  @State var accountService: AccountService = .shared
 
   var userName: String {
     authenticationService.currentUser?.displayName ?? authenticationService.currentUser?.email ?? "(unknown)"
@@ -32,6 +33,13 @@ struct ContentView: View {
     VStack {
       Text("👋🏻 Hello \(authenticationService.isAuthenticated ? userName : "")!")
       Text("You are \(authenticationService.isAuthenticated ? "" : "not") signed in")
+
+      if authenticationService.isAuthenticated,
+         let signInTime = authenticationService.currentUser?.metadata.lastSignInDate {
+        Text(signInTime, style: .relative)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
 
       Button("Sign \(authenticationService.isAuthenticated ? "out" : "in")") {
         if authenticationService.isAuthenticated {
@@ -60,7 +68,13 @@ struct ContentView: View {
     .sheet(isPresented: $presentingDeleteAccountConfirmation) {
       AccountDeletionConfirmationDialog {
         Task {
-          await authenticationService.deleteAccount()
+          do {
+            try await accountService.deleteAccount()
+            //          await authenticationService.deleteAccount()
+          }
+          catch {
+            print(error)
+          }
         }
       }
     }
