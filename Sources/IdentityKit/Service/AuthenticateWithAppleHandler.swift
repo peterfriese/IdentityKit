@@ -1,5 +1,5 @@
 //
-// AuthenticationFlow.swift
+// AuthenticateWithAppleHandler.swift
 // IdentityKit
 //
 // Created by Peter Friese on 06.03.25.
