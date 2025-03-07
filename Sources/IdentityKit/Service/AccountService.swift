@@ -72,7 +72,7 @@ extension AuthenticatedOperation {
     do {
       try await performOperation(on: user, with: nil)
     }
-    catch let error as NSError where error.requiresReauthentication {
+    catch AuthenticationError.reauthenticationRequired {
       let token = try await reauthenticate()
       try await performOperation(on: user, with: token)
     }
