@@ -7,3 +7,4 @@ DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
 /Examples/IdentityKitFirebaseSample/IdentityKitFirebaseSample/GoogleService-Info.plist
+*.p8
