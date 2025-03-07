@@ -21,11 +21,22 @@ import Observation
 import CryptoKit
 import AuthenticationServices
 
+extension ASAuthorizationAppleIDCredential {
+  var authorizationCodeString: String? {
+    guard let authorizationCode else { return nil }
+    return String(data: authorizationCode, encoding: .utf8)
+  }
+
+  var idTokenString: String? {
+    guard let identityToken else { return nil }
+    return String(data: identityToken, encoding: .utf8)
+  }
+}
+
 extension AuthenticationService {
   @MainActor
   func signInWithApple() async -> Bool {
-    let handler = AuthenticateWithAppleHandler()
-    let result = await handler.authenticate()
+    let result = await authenticateWithApple()
 
     switch result {
     case .failure(let error):
@@ -33,13 +44,8 @@ extension AuthenticationService {
       return false
 
     case .success(let (appleIDCredential, nonce)):
-      guard let appleIDToken = appleIDCredential.identityToken else {
-        print("Unable to fetch identify token.")
-        return false
-      }
-
-      guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
-        print("Unable to serialise token string from data: \(appleIDToken.debugDescription)")
+      guard let idTokenString = appleIDCredential.idTokenString else {
+        print("Unable to fetch identity token string.")
         return false
       }
 
@@ -53,49 +59,6 @@ extension AuthenticationService {
       }
       catch {
         print("Error authenticating: \(error.localizedDescription)")
-        return false
-      }
-    }
-  }
-
-  public func deleteAccount() async -> Bool {
-    let handler = AuthenticateWithAppleHandler()
-    let result = await handler.authenticate()
-
-    switch result {
-    case .failure(let error):
-      errorMessage = error.localizedDescription
-      return false
-
-    case .success(let (appleIDCredential, nonce)):
-      guard let appleIDToken = appleIDCredential.identityToken else {
-        print("Unable to fetch identify token.")
-        return false
-      }
-
-      guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
-        print("Unable to serialise token string from data: \(appleIDToken.debugDescription)")
-        return false
-      }
-
-      guard let appleAuthCode = appleIDCredential.authorizationCode else {
-        print("Unable to fetch authorization code")
-        return false
-      }
-
-      guard let authCodeString = String(data: appleAuthCode, encoding: .utf8) else {
-        print("Unable to serialize auth code string from data: \(appleAuthCode.debugDescription)")
-        return false
-      }
-
-      do {
-        try await Auth.auth().revokeToken(withAuthorizationCode: authCodeString)
-        try await currentUser?.delete()
-        try await Auth.auth().signOut()
-        return true
-      }
-      catch {
-        print(error.localizedDescription)
         return false
       }
     }

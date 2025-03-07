@@ -22,7 +22,11 @@ import Observation
 import CryptoKit
 import AuthenticationServices
 
-class AuthenticateWithAppleHandler: NSObject {
+public func authenticateWithApple() async -> Result<(ASAuthorizationAppleIDCredential, String), Error> {
+  await AuthenticateWithAppleDialog().authenticate()
+}
+
+class AuthenticateWithAppleDialog: NSObject {
   private var continuation: CheckedContinuation<Result<(ASAuthorizationAppleIDCredential, String), Error>, Never>?
   private var currentNonce: String?
 
@@ -50,7 +54,7 @@ class AuthenticateWithAppleHandler: NSObject {
   }
 }
 
-extension AuthenticateWithAppleHandler: ASAuthorizationControllerDelegate {
+extension AuthenticateWithAppleDialog: ASAuthorizationControllerDelegate {
   func authorizationController(controller: ASAuthorizationController,
                                didCompleteWithAuthorization authorization: ASAuthorization) {
     if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {

@@ -32,22 +32,17 @@ protocol AppleOperationReauthentication { }
 extension AppleOperationReauthentication {
   func reauthenticate() async throws -> AuthenticationToken {
     print("Trying to reauth with Sign in with Apple")
-    let handler = AuthenticateWithAppleHandler()
-    let result = await handler.authenticate()
+    let result = await authenticateWithApple()
 
     guard case .success(let (appleIDCredential, nonce)) = result else {
       throw NSError(domain: "AppleAuthError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get Apple ID credential"])
     }
 
-    guard let appleIDToken = appleIDCredential.identityToken else {
-      print("Unable to fetch identify token.")
-      throw NSError(domain: "AppleAuthError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unable to fetch identify token."])
-    }
-
-    guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
-      print("Unable to serialise token string from data: \(appleIDToken.debugDescription)")
+    guard let idTokenString = appleIDCredential.idTokenString else {
+      print("Unable to fetch identity token string.")
       throw NSError(domain: "AppleAuthError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unable to serialise token string from data."])
     }
+
 
     let credential = OAuthProvider.appleCredential(withIDToken: idTokenString,
                                                    rawNonce: nonce,
@@ -60,21 +55,15 @@ extension AppleOperationReauthentication {
 
 class AppleDeleteUserOperation: DeleteUserOperation, AppleOperationReauthentication {
   func performOperation(on user: User, with token: AuthenticationToken? = nil) async throws {
-    guard case .apple(let appleIDCredential, let nonce) = token else {
+    guard case .apple(let appleIDCredential, _) = token else {
       throw NSError(domain: AuthErrorDomain, code: AuthErrorCode.requiresRecentLogin.rawValue)
     }
 
-    guard let authorizationCode = appleIDCredential.authorizationCode,
-          let authCode = String(data: authorizationCode, encoding: .utf8) else {
-      throw NSError(domain: "AppleAuthError", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to extract authorization code"])
+    guard let authorizationCodeString = appleIDCredential.authorizationCodeString else {
+      throw NSError(domain: "AppleAuthError", code: -3, userInfo: [NSLocalizedDescriptionKey: "Failed to extract authorization code string"])
     }
 
-    guard let authCodeString = String(data: authorizationCode, encoding: .utf8) else {
-      print("Unable to serialize auth code string from data: \(authorizationCode.debugDescription)")
-      throw NSError(domain: "AppleAuthError", code: -3, userInfo: [NSLocalizedDescriptionKey: "Failed to serialize auth code string"])
-    }
-
-    try await Auth.auth().revokeToken(withAuthorizationCode: authCodeString)
+    try await Auth.auth().revokeToken(withAuthorizationCode: authorizationCodeString)
     print("Revoked Apple ID token")
 
     try await user.delete()

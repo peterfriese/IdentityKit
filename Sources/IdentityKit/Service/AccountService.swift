@@ -26,10 +26,6 @@ extension NSError {
   }
 }
 
-enum IdentityKitCredential {
-  case apple(ASAuthorizationAppleIDCredential)
-}
-
 @MainActor
 @Observable
 final public class AccountService {
@@ -51,7 +47,7 @@ final public class AccountService {
       EmailPasswordDeleteUserOperation()
     }
 
-    try await operation()
+    try await operation(on: user)
     return true
   }
 }
@@ -62,17 +58,13 @@ enum AuthenticationToken {
 }
 
 protocol AuthenticatedOperation {
-  func callAsFunction() async throws
+  func callAsFunction(on user: User) async throws
   func reauthenticate() async throws -> AuthenticationToken
   func performOperation(on user: User, with token: AuthenticationToken?) async throws
 }
 
 extension AuthenticatedOperation {
-  func callAsFunction() async throws {
-    guard let user = Auth.auth().currentUser else {
-      return
-    }
-
+  func callAsFunction(on user: User) async throws {
     do {
       try await performOperation(on: user, with: nil)
     }
@@ -89,19 +81,4 @@ extension DeleteUserOperation {
   func performOperation(on user: User, with token: AuthenticationToken? = nil) async throws {
     try await user.delete()
   }
-}
-
-protocol EmailPasswordOperationReauthentication { }
-extension EmailPasswordOperationReauthentication {
-  func reauthenticate() async throws -> AuthenticationToken {
-    print("Trying to reauth with Email and password")
-    // TODO: at this point, we need to show an email sign in form
-    let credential = EmailAuthProvider.credential(withEmail: "test@test.com", password: "test1234")
-    try await Auth.auth().currentUser?.reauthenticate(with: credential)
-
-    return .firebase("")
-  }
-}
-
-class EmailPasswordDeleteUserOperation: DeleteUserOperation, EmailPasswordOperationReauthentication {
 }
