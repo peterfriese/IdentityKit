@@ -1,5 +1,5 @@
 //
-// AuthenticateWithAppleHandler.swift
+// AuthenticateWithAppleDialog.swift
 // IdentityKit
 //
 // Created by Peter Friese on 06.03.25.
@@ -22,16 +22,16 @@ import Observation
 import CryptoKit
 import AuthenticationServices
 
-public func authenticateWithApple() async -> Result<(ASAuthorizationAppleIDCredential, String), Error> {
-  await AuthenticateWithAppleDialog().authenticate()
+public func authenticateWithApple() async throws -> (ASAuthorizationAppleIDCredential, String) {
+  return try await AuthenticateWithAppleDialog().authenticate()
 }
 
 class AuthenticateWithAppleDialog: NSObject {
-  private var continuation: CheckedContinuation<Result<(ASAuthorizationAppleIDCredential, String), Error>, Never>?
+  private var continuation: CheckedContinuation<(ASAuthorizationAppleIDCredential, String), Error>?
   private var currentNonce: String?
 
-  func authenticate() async -> Result<(ASAuthorizationAppleIDCredential, String), Error> {
-    await withCheckedContinuation { continuation in
+  func authenticate() async throws -> (ASAuthorizationAppleIDCredential, String) {
+    return try await withCheckedThrowingContinuation { continuation in
       self.continuation = continuation
 
       let appleIDProvider = ASAuthorizationAppleIDProvider()
@@ -44,7 +44,8 @@ class AuthenticateWithAppleDialog: NSObject {
         request.nonce = CryptoUtils.sha256(nonce)
       }
       catch {
-        print("Error when creating a nonce: \(error.localizedDescription)")
+        continuation.resume(throwing: AuthenticationError.appleAuthenticationFailed)
+        return
       }
 
       let authorizationController = ASAuthorizationController(authorizationRequests: [request])
@@ -59,22 +60,20 @@ extension AuthenticateWithAppleDialog: ASAuthorizationControllerDelegate {
                                didCompleteWithAuthorization authorization: ASAuthorization) {
     if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
       if let nonce = currentNonce {
-        continuation?.resume(returning: .success((appleIDCredential, nonce)))
+        continuation?.resume(returning: (appleIDCredential, nonce))
       } else {
-        continuation?.resume(returning: .failure(NSError(domain: "", code: -1,
-                                                         userInfo: [NSLocalizedDescriptionKey: "Invalid state: A login callback was received, but no login request was sent."])))
+        continuation?.resume(throwing: AuthenticationError.appleAuthenticationFailed)
       }
     }
     else {
-      continuation?.resume(returning: .failure(NSError(domain: "", code: -1,
-                                                       userInfo: [NSLocalizedDescriptionKey: "Could not get Apple ID credentials"])))
+      continuation?.resume(throwing: AuthenticationError.missingAppleIDToken)
     }
     continuation = nil
   }
 
   func authorizationController(controller: ASAuthorizationController,
                                didCompleteWithError error: Error) {
-    continuation?.resume(returning: .failure(error))
+    continuation?.resume(throwing: AuthenticationError.signInFailed(underlying: error))
     continuation = nil
   }
 }

@@ -21,46 +21,42 @@ import Observation
 import CryptoKit
 import AuthenticationServices
 
+extension Data {
+  var utf8String: String? {
+    return String(data: self, encoding: .utf8)
+  }
+}
+
 extension ASAuthorizationAppleIDCredential {
   var authorizationCodeString: String? {
-    guard let authorizationCode else { return nil }
-    return String(data: authorizationCode, encoding: .utf8)
+    return authorizationCode?.utf8String
   }
 
   var idTokenString: String? {
-    guard let identityToken else { return nil }
-    return String(data: identityToken, encoding: .utf8)
+    return identityToken?.utf8String
   }
 }
 
 extension AuthenticationService {
   @MainActor
-  func signInWithApple() async -> Bool {
-    let result = await authenticateWithApple()
+  @discardableResult
+  func signInWithApple() async throws -> Bool {
+    let (appleIDCredential, nonce) = try await authenticateWithApple()
 
-    switch result {
-    case .failure(let error):
-      errorMessage = error.localizedDescription
-      return false
+    guard let idTokenString = appleIDCredential.idTokenString else {
+      throw AuthenticationError.missingAppleIDToken
+    }
 
-    case .success(let (appleIDCredential, nonce)):
-      guard let idTokenString = appleIDCredential.idTokenString else {
-        print("Unable to fetch identity token string.")
-        return false
-      }
+    let credential = OAuthProvider.appleCredential(withIDToken: idTokenString,
+                                                   rawNonce: nonce,
+                                                   fullName: appleIDCredential.fullName)
 
-      let credential = OAuthProvider.appleCredential(withIDToken: idTokenString,
-                                                     rawNonce: nonce,
-                                                     fullName: appleIDCredential.fullName)
-
-      do {
-        try await Auth.auth().signIn(with: credential)
-        return true
-      }
-      catch {
-        print("Error authenticating: \(error.localizedDescription)")
-        return false
-      }
+    do {
+      try await Auth.auth().signIn(with: credential)
+      return true
+    }
+    catch {
+      throw AuthenticationError.signInFailed(underlying: error)
     }
   }
 }

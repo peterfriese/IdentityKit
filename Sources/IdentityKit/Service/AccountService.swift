@@ -35,9 +35,9 @@ final public class AccountService {
 
   deinit { }
 
-  public func deleteAccount() async throws -> Bool {
+  public func deleteAccount() async throws {
     guard let user = Auth.auth().currentUser else {
-      return false
+      throw AuthenticationError.invalidCredentials
     }
 
     let operation: DeleteUserOperation = if user.isAppleIDUser {
@@ -47,8 +47,12 @@ final public class AccountService {
       EmailPasswordDeleteUserOperation()
     }
 
-    try await operation(on: user)
-    return true
+    do {
+      try await operation(on: user)
+    }
+    catch {
+      throw AuthenticationError.userDeletionFailed(underlying: error)
+    }
   }
 }
 

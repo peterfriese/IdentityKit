@@ -19,26 +19,37 @@
 import Observation
 import AuthenticationServices
 @preconcurrency import FirebaseAuth
+import OSLog
+
+private let logger = Logger(subsystem: "dev.peterfriese.identitykit", category: "EmailAuthentication")
 
 protocol EmailPasswordOperationReauthentication { }
 extension EmailPasswordOperationReauthentication {
   func reauthenticate() async throws -> AuthenticationToken {
-    print("Trying to reauth with Email and password")
+    logger.debug("Attempting to reauthenticate with Email and password")
 
     guard let user = Auth.auth().currentUser else {
-      throw NSError(domain: "", code: 0, userInfo: nil)
+      logger.error("Reauthentication failed: No current user found")
+      throw AuthenticationError.reauthenticationRequired
     }
 
     guard let email = user.email else {
-      throw NSError(domain: "", code: 0, userInfo: nil)
+      logger.error("Reauthentication failed: Current user has no email")
+      throw AuthenticationError.invalidCredentials
     }
 
-    let password = try await confirmPassword(for: email)
+    do {
+      let password = try await confirmPassword(for: email)
 
-    let credential = EmailAuthProvider.credential(withEmail: email, password: password)
-    try await Auth.auth().currentUser?.reauthenticate(with: credential)
+      let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+      try await Auth.auth().currentUser?.reauthenticate(with: credential)
 
-    return .firebase("")
+      logger.info("Successfully reauthenticated user with email")
+      return .firebase("")
+    } catch {
+      logger.error("Reauthentication failed: \(error.localizedDescription)")
+      throw AuthenticationError.signInFailed(underlying: error)
+    }
   }
 }
 

@@ -20,6 +20,21 @@ import Foundation
 import UIKit
 import SwiftUI
 import FirebaseAuth
+import os.log
+
+// Define custom errors for EmailPasswordConfirmationDialog
+public enum EmailPasswordConfirmationError: Error, LocalizedError {
+  case rootViewControllerNotFound
+
+  public var errorDescription: String? {
+    switch self {
+    case .rootViewControllerNotFound:
+      return "Could not find root view controller"
+    }
+  }
+}
+
+private let logger = Logger(subsystem: "dev.peterfriese.identitykit", category: "EmailPasswordConfirmation")
 
 public func confirmPassword(for email: String) async throws -> String {
   return try await EmailPasswordConfirmationDialog().confirmPassword(for: email)
@@ -35,13 +50,15 @@ public class EmailPasswordConfirmationDialog: NSObject {
 
       guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
             let rootViewController = windowScene.windows.first?.rootViewController else {
-        self.continuation?.resume(throwing: NSError(domain: "", code: -1,
-                                                    userInfo: [NSLocalizedDescriptionKey: "Could not find root view controller"]))
+        logger.error("Failed to find root view controller for email confirmation dialog")
+        self.continuation?.resume(throwing: EmailPasswordConfirmationError.rootViewControllerNotFound)
         self.continuation = nil
         return
       }
 
+      logger.debug("Showing password confirmation dialog for email: \(email)")
       let loginView = EmailPasswordConfirmationView(email: email) {
+        logger.debug("Password confirmation completed successfully")
         continuation.resume(returning: $0)
       }
         .padding()
@@ -59,8 +76,12 @@ public class EmailPasswordConfirmationDialog: NSObject {
 #Preview {
   Button("Login") {
     Task {
-      let password = try await EmailPasswordConfirmationDialog().confirmPassword(for: "test@test.com")
-      print(password)
+      do {
+        let password = try await EmailPasswordConfirmationDialog().confirmPassword(for: "test@test.com")
+        print(password)
+      } catch {
+        print("Error: \(error.localizedDescription)")
+      }
     }
   }
 }
