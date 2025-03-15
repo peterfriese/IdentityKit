@@ -15,13 +15,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 import SwiftUI
+
+public enum AccountDeletionConfirmationResult {
+  case cancel
+  case confirm
+}
 
 public struct AccountDeletionConfirmationDialog: View {
   @Environment(\.dismiss) var dismiss
 
   private var action: @MainActor () -> Void
+
+  @State private var result: AccountDeletionConfirmationResult?
 
   public init(action: @escaping @MainActor () -> Void) {
     self.action = action
@@ -48,7 +54,7 @@ public struct AccountDeletionConfirmationDialog: View {
       Spacer()
       VStack(spacing: 16) {
         Button(role: .destructive, action: {
-          action()
+          result = .confirm
           dismiss()
         }) {
           Text("Delete account permanently")
@@ -58,12 +64,22 @@ public struct AccountDeletionConfirmationDialog: View {
         }
         .buttonStyle(.borderedProminent)
 
-        Button(role: .cancel, action: { dismiss() }) {
+        Button(role: .cancel, action: {
+          result = .cancel
+          dismiss()
+        }) {
           Text("Not now")
         }
       }
     }
     .padding()
+    .onDisappear() {
+      Task {
+        if result == .confirm {
+          action()
+        }
+      }
+    }
   }
 }
 

@@ -27,7 +27,10 @@ struct IdentityKitFirebaseSampleApp: App {
 
   var body: some Scene {
     WindowGroup {
-      ContentView()
+      Text("Hello")
+        .sheet(isPresented: .constant(true)) {
+          ContentView()
+        }
     }
   }
 }
