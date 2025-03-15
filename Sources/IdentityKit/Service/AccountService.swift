@@ -46,13 +46,7 @@ final public class AccountService {
     else {
       EmailPasswordDeleteUserOperation()
     }
-
-    do {
-      try await operation(on: user)
-    }
-    catch {
-      throw AuthenticationError.userDeletionFailed(underlying: error)
-    }
+    try await operation(on: user)
   }
 }
 
@@ -71,6 +65,10 @@ extension AuthenticatedOperation {
   func callAsFunction(on user: User) async throws {
     do {
       try await performOperation(on: user, with: nil)
+    }
+    catch let error as NSError where error.requiresReauthentication {
+      let token = try await reauthenticate()
+      try await performOperation(on: user, with: token)
     }
     catch AuthenticationError.reauthenticationRequired {
       let token = try await reauthenticate()

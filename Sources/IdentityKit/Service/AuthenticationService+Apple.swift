@@ -52,7 +52,7 @@ extension AuthenticationService {
                                                    fullName: appleIDCredential.fullName)
 
     do {
-      try await Auth.auth().signIn(with: credential)
+      try await authenticateUser(with: credential)
       return true
     }
     catch {
