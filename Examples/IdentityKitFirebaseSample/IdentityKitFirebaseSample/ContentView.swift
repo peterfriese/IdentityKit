@@ -70,7 +70,6 @@ struct ContentView: View {
         Task {
           do {
             try await accountService.deleteAccount()
-            //          await authenticationService.deleteAccount()
           }
           catch {
             print(error)
@@ -78,7 +77,6 @@ struct ContentView: View {
         }
       }
     }
-
   }
 }
 

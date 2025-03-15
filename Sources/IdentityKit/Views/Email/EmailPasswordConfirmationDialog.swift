@@ -44,6 +44,30 @@ public func confirmPassword(for email: String) async throws -> String {
 public class EmailPasswordConfirmationDialog: NSObject {
   private var continuation: CheckedContinuation<String, Error>?
 
+  private func findTopmostViewController(from viewController: UIViewController) -> UIViewController {
+    if let presentedViewController = viewController.presentedViewController {
+      return findTopmostViewController(from: presentedViewController)
+    }
+
+    if let navigationController = viewController as? UINavigationController {
+      return navigationController.visibleViewController.map(findTopmostViewController) ?? navigationController
+    }
+
+    if let tabBarController = viewController as? UITabBarController {
+      return tabBarController.selectedViewController.map(findTopmostViewController) ?? tabBarController
+    }
+
+    if let splitViewController = viewController as? UISplitViewController {
+      if let detailViewController = splitViewController.viewController(for: .secondary) {
+        return findTopmostViewController(from: detailViewController)
+      } else if let primaryViewController = splitViewController.viewController(for: .primary) {
+        return findTopmostViewController(from: primaryViewController)
+      }
+    }
+
+    return viewController
+  }
+
   public func confirmPassword(for email: String) async throws -> String {
     return try await withCheckedThrowingContinuation { continuation in
       self.continuation = continuation
@@ -55,6 +79,8 @@ public class EmailPasswordConfirmationDialog: NSObject {
         self.continuation = nil
         return
       }
+
+      let topmostViewController = self.findTopmostViewController(from: rootViewController)
 
       logger.debug("Showing password confirmation dialog for email: \(email)")
       let loginView = EmailPasswordConfirmationView(email: email) {
@@ -68,7 +94,7 @@ public class EmailPasswordConfirmationDialog: NSObject {
       hostingController.sheetPresentationController?.detents = [.medium()]
       hostingController.sheetPresentationController?.prefersGrabberVisible = true
 
-      rootViewController.present(hostingController, animated: true)
+      topmostViewController.present(hostingController, animated: true)
     }
   }
 }
