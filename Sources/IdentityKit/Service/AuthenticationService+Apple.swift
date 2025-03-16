@@ -52,8 +52,17 @@ extension AuthenticationService {
                                                    fullName: appleIDCredential.fullName)
 
     do {
-      try await Auth.auth().signIn(with: credential)
+      try await link(with: credential)
       return true
+    }
+    catch let error as NSError where error.credentialAlreadyInUse {
+      if let updatedCredential = error.userInfo[AuthErrors.userInfoUpdatedCredentialKey] as? AuthCredential {
+        try await signIn(with: updatedCredential)
+        return true
+      }
+      else {
+        throw AuthenticationError.credentialAlreadyInUse(underlying: error)
+      }
     }
     catch {
       throw AuthenticationError.signInFailed(underlying: error)

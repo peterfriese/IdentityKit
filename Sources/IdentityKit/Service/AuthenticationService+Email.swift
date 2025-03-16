@@ -34,7 +34,8 @@ extension AuthenticationService {
   public func signUp(withEmail email: String, password: String) async throws {
     authenticationState = .authenticating
     do {
-      try await Auth.auth().createUser(withEmail: email, password: password)
+      let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+      try await link(with: credential)
     }
     catch {
       authenticationState = .unauthenticated

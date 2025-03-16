@@ -55,12 +55,19 @@ final public class AuthenticationService {
 
   private init() {
     setupAuthenticationListener()
+    signInGuestAccount()
   }
 
   deinit {
     if let handle = authStateHandle {
       Auth.auth().removeStateDidChangeListener(handle)
       authStateHandle = nil
+    }
+  }
+
+  func signInGuestAccount() {
+    if Auth.auth().currentUser == nil {
+      Auth.auth().signInAnonymously()
     }
   }
 
@@ -75,8 +82,15 @@ final public class AuthenticationService {
   private func setupAuthenticationListener() {
     authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
       self?.currentUser = user
-      self?.authenticationState = user == nil ? .unauthenticated : .authenticated
+      self?.updateAuthenticationState()
     }
+  }
+
+  func updateAuthenticationState() {
+    authenticationState =
+      (currentUser == nil || currentUser?.isAnonymous == true)
+        ? .unauthenticated
+        : .authenticated
   }
 
   public var authenticationState: AuthenticationState = .unauthenticated
@@ -87,6 +101,11 @@ final public class AuthenticationService {
 
   public var currentUser: User?
 
+  public var isGuestAccount: Bool {
+    guard let currentUser else { return false }
+    return currentUser.isAnonymous
+  }
+
   var errorMessage = ""
 
   public static func enableKeychainSharing(with group: String) throws {
@@ -95,6 +114,24 @@ final public class AuthenticationService {
 
   public func signOut() throws {
     try Auth.auth().signOut()
+    signInGuestAccount()
+  }
+
+  func signIn(with credentials: AuthCredential) async throws {
+    try await Auth.auth().signIn(with: credentials)
+    updateAuthenticationState()
+  }
+
+  func signUp(with credentials: AuthCredential) async throws {
+    try await Auth.auth().signIn(with: credentials)
+    updateAuthenticationState()
+  }
+
+  func link(with credentials: AuthCredential) async throws {
+    if let currentUser {
+      try await currentUser.link(with: credentials)
+      updateAuthenticationState()
+    }
   }
 
 }
