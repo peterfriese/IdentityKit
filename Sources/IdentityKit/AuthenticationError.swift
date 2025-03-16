@@ -4,6 +4,7 @@ public enum AuthenticationError: LocalizedError {
   case signInFailed(underlying: Error)
   case signUpFailed(underlying: Error)
   case invalidCredentials
+  case credentialAlreadyInUse(underlying: Error)
   case missingAppleIDToken
   case missingAuthorizationCode
   case appleAuthenticationFailed
@@ -19,6 +20,8 @@ public enum AuthenticationError: LocalizedError {
       return "Failed to create account: \(error.localizedDescription)"
     case .invalidCredentials:
       return "Invalid email or password"
+    case .credentialAlreadyInUse(underlying: let error):
+      return "Credentials already in use: \(error.localizedDescription)"
     case .missingAppleIDToken:
       return "Could not retrieve Apple ID token"
     case .missingAuthorizationCode:

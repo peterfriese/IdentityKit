@@ -35,7 +35,7 @@ extension AuthenticationService {
     authenticationState = .authenticating
     do {
       let credential = EmailAuthProvider.credential(withEmail: email, password: password)
-      try await authenticateUser(with: credential)
+      try await link(with: credential)
     }
     catch {
       authenticationState = .unauthenticated

@@ -117,18 +117,21 @@ final public class AuthenticationService {
     signInGuestAccount()
   }
 
-  func authenticateUser(with credentials: AuthCredential) async throws {
-    // if there already is a user, let's link the new credentials to that user
-    if currentUser != nil {
-      try await currentUser?.link(with: credentials)
-      updateAuthenticationState()
-    }
-    // otherwise, let's sign in using the new credentials
-    else {
-      try await Auth.auth().signIn(with: credentials)
-      updateAuthenticationState()
-    }
+  func signIn(with credentials: AuthCredential) async throws {
+    try await Auth.auth().signIn(with: credentials)
+    updateAuthenticationState()
+  }
 
+  func signUp(with credentials: AuthCredential) async throws {
+    try await Auth.auth().signIn(with: credentials)
+    updateAuthenticationState()
+  }
+
+  func link(with credentials: AuthCredential) async throws {
+    if let currentUser {
+      try await currentUser.link(with: credentials)
+      updateAuthenticationState()
+    }
   }
 
 }

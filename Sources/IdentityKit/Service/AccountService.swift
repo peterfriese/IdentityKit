@@ -24,6 +24,10 @@ extension NSError {
   var requiresReauthentication: Bool {
     domain == AuthErrorDomain && code == AuthErrorCode.requiresRecentLogin.rawValue
   }
+
+  var credentialAlreadyInUse: Bool {
+    domain == AuthErrorDomain && code == AuthErrorCode.credentialAlreadyInUse.rawValue
+  }
 }
 
 @MainActor
