@@ -24,12 +24,15 @@ struct SocialAuthenticationButtonStyle: ButtonStyle {
       .foregroundStyle(.primary)
       .frame(maxWidth: .infinity)
       .padding(.vertical, 8)
-      .background(.white)
+      .background(configuration.isPressed ? Color(.secondarySystemBackground) : Color(.systemBackground))
       .overlay(
         RoundedRectangle(cornerRadius: 8)
-          .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+          .stroke(.tertiary, lineWidth: 1)
       )
       .clipShape(RoundedRectangle(cornerRadius: 8))
+      .animation(.spring(response: 0.2,
+                         dampingFraction: 0.5),
+                 value: configuration.isPressed)
   }
 }
 
@@ -42,5 +45,5 @@ struct SocialAuthenticationButtonStyle: ButtonStyle {
       .frame(width: 32, height: 32)
   }
   .buttonStyle(SocialAuthenticationButtonStyle())
+  .padding()
 }
-
