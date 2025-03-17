@@ -36,6 +36,7 @@ enum AuthenticationFlow {
 public struct AuthenticationScreen {
   // MARK: - Dependencies
   @Environment(AuthenticationService.self) private var authenticationService
+  @Environment(\.authenticationProviders) private var authenticationProviders
 
   // MARK: - Private properties
   @State private var flow: AuthenticationFlow = .login
@@ -67,8 +68,10 @@ extension AuthenticationScreen: View {
           .opacity(flow == .signUp ? 1 : 0)
       }
 
-      EmailPasswordAuthenticationView()
-        .environment(\.authenticationFlow, flow)
+      if authenticationProviders.contains(.email) {
+        EmailPasswordAuthenticationView()
+          .environment(\.authenticationFlow, flow)
+      }
 
       if !errorMessage.isEmpty {
         VStack {
@@ -90,8 +93,12 @@ extension AuthenticationScreen: View {
 //      .frame(maxWidth: .infinity)
 
       VStack(spacing: 16) {
-        AuthenticateWithAppleButton(flow == .login ? .signIn : .signUp)
-        AuthenticateWithGoogleButton(flow == .login ? .signIn : .signUp)
+        if authenticationProviders.contains(.apple) {
+          AuthenticateWithAppleButton(flow == .login ? .signIn : .signUp)
+        }
+        if authenticationProviders.contains(.google) {
+          AuthenticateWithGoogleButton(flow == .login ? .signIn : .signUp)
+        }
       }
 
       HStack {
