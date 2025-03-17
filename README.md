@@ -3,7 +3,6 @@
 IdentityKit is a Swift package that provides a comprehensive authentication solution for your iOS apps. It seamlessly integrates with Firebase Authentication and offers multiple authentication methods, including email/password, Apple Sign-In, and more.
 
 ![IdentityKit Screenshot](./assets/screenshots/screenshot.png)
-*[Screenshot placeholder - Replace with actual screenshot]*
 
 ## Features
 
