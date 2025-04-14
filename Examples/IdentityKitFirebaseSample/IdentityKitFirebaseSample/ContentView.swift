@@ -64,6 +64,10 @@ struct ContentView: View {
     .sheet(isPresented: $presentingAuthenticationDialog) {
       AuthenticationScreen()
         .environment(authenticationService)
+        .authenticationProviders([
+          .email,
+          .apple
+        ])
     }
     .sheet(isPresented: $presentingDeleteAccountConfirmation) {
       AccountDeletionConfirmationDialog {
