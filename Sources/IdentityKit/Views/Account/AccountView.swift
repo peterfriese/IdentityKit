@@ -85,7 +85,7 @@ extension AccountView {
           .font(.headline)
       }
 
-      Text("You are signed in as a guest. Your data is stored locally and may be lost.")
+      Text("Your guest account is tied to this device. If you switch devices without upgrading to a full account, you may lose access to your data.")
         .font(.subheadline)
         .foregroundStyle(.secondary)
 
@@ -96,7 +96,7 @@ extension AccountView {
       VStack(alignment: .leading, spacing: 4) {
         Label("Sync across devices", systemImage: "icloud")
         Label("Data backup and recovery", systemImage: "externaldrive")
-        Label("Access on the web", systemImage: "globe")
+        Label("Access on other devices", systemImage: "iphone")
       }
       .font(.caption)
       .foregroundStyle(.secondary)
