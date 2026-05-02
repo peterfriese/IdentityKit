@@ -8,3 +8,6 @@ DerivedData/
 .netrc
 /Examples/IdentityKitFirebaseSample/IdentityKitFirebaseSample/GoogleService-Info.plist
 *.p8
+.luca/tools
+.luca/skills
+.agents/skills

@@ -26,7 +26,11 @@ enum AppDestination: Hashable {
 struct ContentView: View {
   @State var presentingAuthenticationDialog = false
   @State var presentingDeleteAccountConfirmation = false
-  @Environment(AuthenticationService.self) private var authService
+  @State private var refreshTrigger = false
+
+  private var authService: AuthenticationService {
+    AuthenticationService.shared
+  }
 
   var userName: String {
     authService.currentUser?.displayName ?? authService.currentUser?.email ?? "(unknown)"
