@@ -44,12 +44,19 @@ final public class AccountService {
       throw AuthenticationError.invalidCredentials
     }
 
+    #if canImport(UIKit)
     let operation: DeleteUserOperation = if user.isAppleIDUser {
       AppleDeleteUserOperation()
     }
     else {
       EmailPasswordDeleteUserOperation()
     }
+    #else
+    guard user.isAppleIDUser else {
+      throw AuthenticationError.invalidCredentials
+    }
+    let operation: DeleteUserOperation = AppleDeleteUserOperation()
+    #endif
     try await operation(on: user)
   }
 }

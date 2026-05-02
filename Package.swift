@@ -4,7 +4,6 @@ import PackageDescription
 
 let package = Package(
   name: "IdentityKit",
-  version: "0.2.0",
   platforms: [
     .iOS(.v17),
     .macOS(.v14)
