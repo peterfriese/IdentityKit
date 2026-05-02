@@ -26,11 +26,10 @@ enum AppDestination: Hashable {
 struct ContentView: View {
   @State var presentingAuthenticationDialog = false
   @State var presentingDeleteAccountConfirmation = false
-  @State var authenticationService = AuthenticationService.shared
-  @State var accountService: AccountService = .shared
+  @Environment(AuthenticationService.self) private var authService
 
   var userName: String {
-    authenticationService.currentUser?.displayName ?? authenticationService.currentUser?.email ?? "(unknown)"
+    authService.currentUser?.displayName ?? authService.currentUser?.email ?? "(unknown)"
   }
 
   var body: some View {
@@ -38,12 +37,12 @@ struct ContentView: View {
       List {
         Section {
           VStack(alignment: .leading, spacing: 8) {
-            Text("👋🏻 Hello \(authenticationService.isAuthenticated ? userName : "")!")
-            Text("You are \(authenticationService.isAuthenticated ? "" : "not") signed in")
+            Text("👋🏻 Hello \(authService.isAuthenticated ? userName : "")!")
+            Text("You are \(authService.isAuthenticated ? "" : "not") signed in")
               .foregroundStyle(.secondary)
 
-            if authenticationService.isAuthenticated,
-               let signInTime = authenticationService.currentUser?.metadata.lastSignInDate {
+            if authService.isAuthenticated,
+               let signInTime = authService.currentUser?.metadata.lastSignInDate {
               Text("Signed in \(signInTime, style: .relative)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -53,9 +52,9 @@ struct ContentView: View {
 
         Section {
           Button {
-            if authenticationService.isAuthenticated {
+            if authService.isAuthenticated {
               do {
-                try authenticationService.signOut()
+                try authService.signOut()
               }
               catch {
                 print(error.localizedDescription)
@@ -66,8 +65,8 @@ struct ContentView: View {
             }
           } label: {
             Label(
-              authenticationService.isAuthenticated ? "Sign Out" : "Sign In",
-              systemImage: authenticationService.isAuthenticated ? "rectangle.portrait.and.arrow.right" : "person.crop.circle.badge.plus"
+              authService.isAuthenticated ? "Sign Out" : "Sign In",
+              systemImage: authService.isAuthenticated ? "rectangle.portrait.and.arrow.right" : "person.crop.circle.badge.plus"
             )
           }
 
@@ -76,7 +75,7 @@ struct ContentView: View {
           }
         }
 
-        if authenticationService.isAuthenticated {
+        if authService.isAuthenticated {
           Section("Danger Zone") {
             Button(role: .destructive) {
               presentingDeleteAccountConfirmation.toggle()
@@ -90,12 +89,10 @@ struct ContentView: View {
         switch destination {
         case .account:
           AccountView()
-            .environment(authenticationService)
         }
       }
       .sheet(isPresented: $presentingAuthenticationDialog) {
         AuthenticationScreen()
-          .environment(authenticationService)
           .authenticationProviders([
             .email,
             .apple
