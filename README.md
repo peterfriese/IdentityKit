@@ -24,7 +24,7 @@ IdentityKit is a Swift package that provides a comprehensive authentication solu
 
 - iOS 17.0+
 - Swift 6.0+
-- Xcode 15.0+
+- Xcode 26.2+ (required for Firebase 12.x)
 
 ## Installation
 

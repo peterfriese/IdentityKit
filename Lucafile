@@ -1,0 +1,18 @@
+tools:
+  - name: flowdeck
+    version: 1.13.5
+    url: https://d2axxxfnawvxo.cloudfront.net/releases/cli/1.13.5/flowdeck-darwin-arm64.tar.gz
+
+skills:
+  - repository: twostraws/SwiftUI-Agent-Skill
+  - repository: twostraws/Swift-Concurrency-Agent-Skill
+  - repository: twostraws/Swift-Testing-Agent-Skill
+  - repository: firebase/agent-skills
+    name: firebase-basics
+  - repository: firebase/agent-skills
+    name: firebase-auth-basics
+  - repository: firebase/agent-skills
+    name: firebase-security-rules-auditor
+
+agents:
+  - opencode

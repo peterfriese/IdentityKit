@@ -1,0 +1,86 @@
+# IdentityKit: Agent Guidelines
+
+You are an AI engineering agent helping build **IdentityKit**, a Swift package for Firebase Authentication.
+
+## Core Directives
+
+1. **Follow Existing Patterns**: Study existing code in `Sources/IdentityKit/` before implementing new features.
+2. **No Breaking Changes**: Maintain API stability — IdentityKit is used by external projects.
+3. **Documentation**: Keep README.md current with any API changes.
+4. **Testing**: Use Swift Testing framework in `Tests/IdentityKitTests/`.
+
+## Technical Stack
+
+- **Package Manager**: Swift Package Manager
+- **Dependency**: Firebase Auth (firebase-ios-sdk)
+- **Deployment Target**: iOS 17+
+- **Testing**: Swift Testing
+
+## Project Conventions
+
+### Identity
+
+- **Name**: IdentityKit (exact spelling)
+- **Bundle ID**: N/A (package, not app)
+- **Module name**: `IdentityKit`
+
+### Architecture
+
+- **Single package**: All code in `Sources/IdentityKit/`
+- **Service pattern**: Core services (AuthenticationService, AccountService) with protocol-based extension for providers
+- **Error handling**: Use `AuthenticationError` enum for all error types
+
+### New Feature Structure
+
+When adding a new auth provider:
+
+1. **Protocol extension**: Add to existing service file (e.g., `AuthenticationService+<Provider>.swift`)
+2. **Provider view**: Create in `Views/<Provider>/`
+3. **Tests**: Add to `Tests/IdentityKitTests/`
+4. **Export**: Update main `IdentityKit.swift` if needed
+5. **README**: Document the new provider
+
+## Luca & Lucafile
+
+Luca (`luca`) is the project's skill manager. The `Lucafile` at the project root defines skill definitions and agent configurations.
+
+### Skill Management Rules
+
+- **Only install explicitly requested skills** — never install "all" skills from a repo
+- **Skills go in `.agents/skills/`** — if Luca creates a `skills/` folder at the project root with agent subfolders, that's wrong. Remove it.
+- **Never create per-agent skill folders** — Luca creates subfolders for claude-code, github-copilot, gemini, opencode, antigravity, etc. Only the skills explicitly listed in the Lucafile should be installed.
+
+### Running Luca
+
+- Run `luca install` at session start to verify skills are loaded
+- Run `luca install` after any Lucafile changes to sync
+
+## Session & Process Rules
+
+### Build & Compilation
+
+- **Always use FlowDeck**: `flowdeck build` and `flowdeck test`
+- IdentityKit is an SPM-only package — if FlowDeck fails, fallback to `swift build` and `swift test`
+- For downstream projects with Xcode workspaces (e.g., `Examples/IdentityKitFirebaseSample/`), always use FlowDeck
+- NEVER claim the code compiles without actually running the build command
+
+### Escalation Protocol
+
+- If the same fix fails 2 times, STOP. Do not attempt a 3rd time without asking the user
+- Document what you tried and why it failed before asking for direction
+
+### Documentation Sync
+
+- After completing any task, update README.md if needed
+- If adding new public APIs, document them
+
+### Prohibited Technologies
+
+- **No Combine**: Use async/await instead
+- **No external UI frameworks**: Only use SwiftUI (built into iOS 17+)
+
+### Git Workflow
+
+- All changes go through feature branches and PRs
+- Squash and merge unless history is important
+- Never push directly to main

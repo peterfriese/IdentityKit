@@ -4,8 +4,10 @@ import PackageDescription
 
 let package = Package(
   name: "IdentityKit",
+  version: "0.2.0",
   platforms: [
-    .iOS(.v17)
+    .iOS(.v17),
+    .macOS(.v14)
   ],
   products: [
     .library(
@@ -13,7 +15,7 @@ let package = Package(
       targets: ["IdentityKit"])
   ],
   dependencies: [
-    .package(url: "https://github.com/firebase/firebase-ios-sdk", from: "11.0.0")
+    .package(url: "https://github.com/firebase/firebase-ios-sdk", from: "12.0.0")
   ],
   targets: [
     .target(
