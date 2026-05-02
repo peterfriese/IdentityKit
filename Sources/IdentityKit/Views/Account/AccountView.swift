@@ -19,8 +19,11 @@
 import SwiftUI
 
 public struct AccountView: View {
-  @Environment(AuthenticationService.self) private var authService
   @Environment(\.dismiss) private var dismiss
+
+  private var authService: AuthenticationService {
+    AuthenticationService.shared
+  }
 
   @State private var showAuthenticationScreen = false
   @State private var showDeleteConfirmation = false
