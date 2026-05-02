@@ -48,6 +48,7 @@ public enum AuthenticationState {
   case authenticated
 }
 
+@available(macOS 14.0, *)
 @MainActor
 @Observable
 final public class AuthenticationService {

@@ -20,10 +20,15 @@ import Observation
 import AuthenticationServices
 @preconcurrency import FirebaseAuth
 import OSLog
+#if canImport(UIKit)
+import UIKit
+#endif
 
 private let logger = Logger(subsystem: "dev.peterfriese.identitykit", category: "EmailAuthentication")
 
 protocol EmailPasswordOperationReauthentication { }
+
+#if canImport(UIKit)
 extension EmailPasswordOperationReauthentication {
   func reauthenticate() async throws -> AuthenticationToken {
     logger.debug("Attempting to reauthenticate with Email and password")
@@ -55,3 +60,4 @@ extension EmailPasswordOperationReauthentication {
 
 class EmailPasswordDeleteUserOperation: DeleteUserOperation, EmailPasswordOperationReauthentication {
 }
+#endif
