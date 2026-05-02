@@ -96,6 +96,7 @@ struct ContentView: View {
       }
       .sheet(isPresented: $presentingAuthenticationDialog) {
         AuthenticationScreen()
+          .environment(authService)
           .authenticationProviders([
             .email,
             .apple
