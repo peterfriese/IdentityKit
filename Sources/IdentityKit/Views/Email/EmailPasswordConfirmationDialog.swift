@@ -17,7 +17,9 @@
 // limitations under the License.
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 import SwiftUI
 import FirebaseAuth
 import os.log
