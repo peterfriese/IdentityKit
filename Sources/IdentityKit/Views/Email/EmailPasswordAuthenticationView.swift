@@ -82,6 +82,7 @@ extension EmailPasswordAuthenticationView: View {
           .disableAutocorrection(true)
           .focused($focus, equals: .email)
           .submitLabel(.next)
+          .accessibilityIdentifier("email")
           .onSubmit {
             self.focus = .password
           }
@@ -96,6 +97,7 @@ extension EmailPasswordAuthenticationView: View {
         SecureField("Password", text: $password)
           .focused($focus, equals: .password)
           .submitLabel(.go)
+          .accessibilityIdentifier("password")
           .onSubmit {
             Task { await signInWithEmailPassword() }
           }
