@@ -19,15 +19,13 @@
 import SwiftUI
 
 public struct AccountView: View {
-  @Environment(\.dismiss) private var dismiss
+  @State private var showAuthenticationScreen = false
+  @State private var showDeleteConfirmation = false
+  @State private var deleteError: Error?
 
   private var authService: AuthenticationService {
     AuthenticationService.shared
   }
-
-  @State private var showAuthenticationScreen = false
-  @State private var showDeleteConfirmation = false
-  @State private var deleteError: Error?
 
   public init() {}
 
@@ -47,7 +45,6 @@ public struct AccountView: View {
         Task {
           do {
             try await AccountService.shared.deleteAccount()
-            dismiss()
           } catch {
             deleteError = error
           }
@@ -192,7 +189,6 @@ extension AccountView {
         Button(role: .destructive) {
           do {
             try authService.signOut()
-            dismiss()
           } catch {
             print("Sign out failed: \(error.localizedDescription)")
           }

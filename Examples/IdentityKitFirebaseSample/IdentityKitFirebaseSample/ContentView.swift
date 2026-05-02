@@ -26,7 +26,6 @@ enum AppDestination: Hashable {
 struct ContentView: View {
   @State var presentingAuthenticationDialog = false
   @State var presentingDeleteAccountConfirmation = false
-  @State private var refreshTrigger = false
 
   private var authService: AuthenticationService {
     AuthenticationService.shared
