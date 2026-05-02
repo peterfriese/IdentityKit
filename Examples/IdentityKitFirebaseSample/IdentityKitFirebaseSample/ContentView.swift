@@ -102,7 +102,7 @@ struct ContentView: View {
         AccountDeletionConfirmationDialog {
           Task {
             do {
-              try await accountService.deleteAccount()
+              try await AccountService.shared.deleteAccount()
             }
             catch {
               print(error)
