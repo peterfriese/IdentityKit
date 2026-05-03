@@ -12,6 +12,9 @@ public enum AuthenticationError: LocalizedError {
   case reauthenticationRequired
   case tokenRevocationFailed(underlying: Error)
   case upgradeCancelled
+  case googleSignInFailed
+  case googleSignInCancelled
+  case missingGoogleIDToken
 
   public var errorDescription: String? {
     switch self {
@@ -37,6 +40,12 @@ public enum AuthenticationError: LocalizedError {
       return "Failed to revoke authentication token: \(error.localizedDescription)"
     case .upgradeCancelled:
       return "Account upgrade was not completed"
+    case .googleSignInFailed:
+      return "Failed to sign in with Google"
+    case .googleSignInCancelled:
+      return "Google sign in was cancelled"
+    case .missingGoogleIDToken:
+      return "Could not retrieve Google ID token"
     }
   }
 }

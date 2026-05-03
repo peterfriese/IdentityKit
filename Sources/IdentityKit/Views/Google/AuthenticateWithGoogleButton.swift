@@ -74,9 +74,14 @@ struct AuthenticateWithGoogleButton: View {
       guard isAuthenticating else { return }
       defer { isAuthenticating = false }
 
-      let success = true // await authenticationService.signInWithApple()
-      if success {
-        dismiss()
+      do {
+        let success = try await authenticationService.signInWithGoogle()
+        if success {
+          dismiss()
+        }
+      } catch {
+        // Error is handled by the authentication service
+        // User can see error via service's errorMessage property
       }
     }
   }

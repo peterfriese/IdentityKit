@@ -9,15 +9,18 @@ IdentityKit is a Swift package that provides a comprehensive authentication solu
 - 🔐 Multiple authentication methods:
   - Email and password authentication
   - Apple Sign-In
+  - Google Sign-In
   - *(More methods coming soon)*
 - 🔄 Complete user lifecycle management:
   - Sign up
   - Sign in
   - Password reset
   - Account deletion
+  - Account upgrade (guest → full account)
 - 🎨 Customizable UI components
-- 🛡️ Robust error handling
-- 📱 iOS 17+ support
+- 🛡️ Robust error handling with clear, localized messages
+- 📱 iOS 26+ support
+- 💻 macOS 26+ support
 - 🔌 Firebase Authentication integration
 
 ## Requirements
@@ -50,6 +53,38 @@ Or add it directly in Xcode:
 2. Add an iOS app to your Firebase project
 3. Download the `GoogleService-Info.plist` file and add it to your app
 4. Enable the authentication methods you want to use in the Firebase Console
+
+### Google Sign-In Setup
+
+If you want to use Google Sign-In, additional configuration is required:
+
+1. **Enable Google Sign-In in Firebase Console**:
+   - Go to Authentication → Sign-in method
+   - Enable "Google"
+
+2. **Configure URL Schemes**:
+   - Open your `GoogleService-Info.plist` file
+   - Find the `REVERSED_CLIENT_ID` value (e.g., `com.googleusercontent.apps.123456789-abcdef`)
+   - Add this as a URL scheme in your app's Info.plist:
+     ```xml
+     <key>CFBundleURLTypes</key>
+     <array>
+       <dict>
+         <key>CFBundleURLSchemes</key>
+         <array>
+           <string>YOUR_REVERSED_CLIENT_ID</string>
+         </array>
+       </dict>
+     </array>
+     ```
+
+3. **Handle URL callback**:
+   Add to your AppDelegate (iOS) or App (macOS):
+   ```swift
+   func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+       return GIDSignIn.sharedInstance.handle(url)
+   }
+   ```
 
 ## Quick Start
 
@@ -228,6 +263,39 @@ struct CustomAuthView: View {
     }
 }
 ```
+
+### Error Handling
+
+IdentityKit provides a comprehensive `AuthenticationError` enum with clear, localized error messages:
+
+```swift
+import IdentityKit
+
+do {
+    try await authService.signInWithEmail(email: email, password: password)
+} catch let error as AuthenticationError {
+    switch error {
+    case .invalidCredentials:
+        // Show "Invalid email or password"
+    case .signInFailed(let underlying):
+        // Show "Failed to sign in: \(underlying.localizedDescription)"
+    case .upgradeCancelled:
+        // Show "Account upgrade was not completed"
+    // ... handle other cases
+    }
+}
+```
+
+**Available error cases:**
+- `invalidCredentials` - Invalid email or password
+- `signInFailed(underlying:)` - Sign in failed with underlying error
+- `signUpFailed(underlying:)` - Sign up failed with underlying error
+- `credentialAlreadyInUse(underlying:)` - Credentials already linked to another account
+- `userDeletionFailed(underlying:)` - Account deletion failed
+- `reauthenticationRequired` - User needs to re-authenticate
+- `upgradeCancelled` - Guest account upgrade was not completed
+
+All errors conform to Swift's `LocalizedError` protocol for automatic localizedDescription support.
 
 ## License
 
