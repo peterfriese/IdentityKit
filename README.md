@@ -119,7 +119,7 @@ import IdentityKit
 
 struct MainView: View {
     @StateObject private var authService = AuthenticationService.shared
-    
+
     var body: some View {
         Group {
             if authService.isAuthenticated {
@@ -137,6 +137,36 @@ struct MainView: View {
     }
 }
 ```
+
+### Account Screen
+
+IdentityKit provides a built-in Account screen that displays the user's account status and provides options to upgrade from guest or sign out from a full account:
+
+```swift
+import SwiftUI
+import IdentityKit
+
+struct ContentView: View {
+    @State private var showAccount = false
+
+    var body: some View {
+        Button("Account") {
+            showAccount = true
+        }
+        .sheet(isPresented: $showAccount) {
+            AccountView { error in
+                // Handle upgrade failures
+                print("Upgrade failed: \(error.localizedDescription)")
+            }
+            .environment(AuthenticationService.shared)
+        }
+    }
+}
+```
+
+The Account screen displays:
+- **Guest users**: Warning about device-only data, benefits of upgrading, and an "Upgrade to Full Account" button
+- **Authenticated users**: Email address, verification status, sign-in methods (as pills), "Sign Out" and "Delete Account" buttons
 
 ## Advanced Usage
 

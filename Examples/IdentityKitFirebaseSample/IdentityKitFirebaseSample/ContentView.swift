@@ -21,7 +21,7 @@ import IdentityKit
 
 struct ContentView: View {
   @State var presentingAuthenticationDialog = false
-  @State var presentingDeleteAccountConfirmation = false
+  @State var presentingAccount = false
   @State var authenticationService = AuthenticationService.shared
   @State var accountService: AccountService = .shared
 
@@ -30,55 +30,56 @@ struct ContentView: View {
   }
 
   var body: some View {
-    VStack {
-      Text("👋🏻 Hello \(authenticationService.isAuthenticated ? userName : "")!")
-      Text("You are \(authenticationService.isAuthenticated ? "" : "not") signed in")
-
-      if authenticationService.isAuthenticated,
-         let signInTime = authenticationService.currentUser?.metadata.lastSignInDate {
-        Text(signInTime, style: .relative)
-          .font(.caption)
-          .foregroundStyle(.secondary)
-      }
-
-      Button("Sign \(authenticationService.isAuthenticated ? "out" : "in")") {
-        if authenticationService.isAuthenticated {
-          do {
-            try authenticationService.signOut()
-          }
-          catch {
-            print(error.localizedDescription)
+    NavigationStack {
+      List {
+        Section {
+          VStack(alignment: .leading, spacing: 8) {
+            Text("👋🏻 Hello \(authenticationService.isAuthenticated ? userName : "Guest")!")
+              .font(.headline)
+            Text("You are \(authenticationService.isAuthenticated ? "" : "not") signed in")
+              .foregroundStyle(.secondary)
           }
         }
-        else {
-          presentingAuthenticationDialog.toggle()
-        }
-      }
 
-      if authenticationService.isAuthenticated {
-        Button("Delete account", role: .destructive) {
-          presentingDeleteAccountConfirmation.toggle()
+        Section {
+          Button {
+            presentingAccount = true
+          } label: {
+            Label("Account", systemImage: "person.circle")
+          }
+        }
+
+        Section {
+          Button("Sign \(authenticationService.isAuthenticated ? "out" : "in")") {
+            if authenticationService.isAuthenticated {
+              do {
+                try authenticationService.signOut()
+              }
+              catch {
+                print(error.localizedDescription)
+              }
+            }
+            else {
+              presentingAuthenticationDialog.toggle()
+            }
+          }
         }
       }
-    }
-    .sheet(isPresented: $presentingAuthenticationDialog) {
-      AuthenticationScreen()
+      .navigationTitle("IdentityKit")
+      .sheet(isPresented: $presentingAuthenticationDialog) {
+        AuthenticationScreen()
+          .environment(authenticationService)
+          .authenticationProviders([
+            .email,
+            .apple,
+            .google
+          ])
+      }
+      .sheet(isPresented: $presentingAccount) {
+        AccountView { error in
+          print("Upgrade failed: \(error.localizedDescription)")
+        }
         .environment(authenticationService)
-        .authenticationProviders([
-          .email,
-          .apple
-        ])
-    }
-    .sheet(isPresented: $presentingDeleteAccountConfirmation) {
-      AccountDeletionConfirmationDialog {
-        Task {
-          do {
-            try await accountService.deleteAccount()
-          }
-          catch {
-            print(error)
-          }
-        }
       }
     }
   }

@@ -78,8 +78,7 @@ extension EmailPasswordAuthenticationView: View {
     VStack {
       LabeledContent {
         TextField("Email", text: $email)
-          .textInputAutocapitalization(.never)
-          .disableAutocorrection(true)
+          .platform.textInputAutocapitalization(.never)
           .focused($focus, equals: .email)
           .submitLabel(.next)
           .onSubmit {

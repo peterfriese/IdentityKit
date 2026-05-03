@@ -76,7 +76,7 @@ extension AuthenticationScreen: View {
       if !errorMessage.isEmpty {
         VStack {
           Text(errorMessage)
-            .foregroundColor(Color(UIColor.systemRed))
+            .foregroundStyle(.red)
         }
       }
 
