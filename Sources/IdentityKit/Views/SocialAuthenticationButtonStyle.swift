@@ -24,7 +24,13 @@ struct SocialAuthenticationButtonStyle: ButtonStyle {
       .foregroundStyle(.primary)
       .frame(maxWidth: .infinity)
       .padding(.vertical, 8)
-      .background(configuration.isPressed ? Color(.secondarySystemBackground) : Color(.systemBackground))
+      .background {
+        if configuration.isPressed {
+          Color.platformSecondaryBackground
+        } else {
+          Color.clear
+        }
+      }
       .overlay(
         RoundedRectangle(cornerRadius: 8)
           .stroke(.tertiary, lineWidth: 1)

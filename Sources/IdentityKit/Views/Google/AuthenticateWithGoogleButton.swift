@@ -39,7 +39,7 @@ struct AuthenticateWithGoogleButton: View {
       ViewThatFits(in: .horizontal) {
         // First attempt: show both logo and text
         HStack(spacing: 8) {
-          Image("google.logo", bundle: .module)
+          Image("google.logo")
             .resizable()
             .scaledToFit()
             .frame(width: 32, height: 32)
@@ -52,7 +52,7 @@ struct AuthenticateWithGoogleButton: View {
 
         // Fallback: show only the logo
 
-        Image("google.logo", bundle: .module)
+        Image("google.logo")
           .resizable()
           .scaledToFit()
           .frame(width: 32, height: 32)
