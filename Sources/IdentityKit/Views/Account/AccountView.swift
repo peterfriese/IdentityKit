@@ -17,7 +17,7 @@
 //  limitations under the License.
 
 import SwiftUI
-import os
+import os.log
 
 @MainActor
 public struct AccountView: View {
@@ -61,18 +61,7 @@ public struct AccountView: View {
     guard let providerData = authenticationService.currentUser?.providerData else {
       return []
     }
-    return providerData.map { provider in
-      switch provider.providerID {
-      case "email":
-        return "Email"
-      case "google.com":
-        return "Google"
-      case "apple.com":
-        return "Apple"
-      default:
-        return provider.providerID
-      }
-    }
+    return providerData.map { AuthProviderMapper.displayName(for: $0.providerID) }
   }
 
   private func handleUpgrade() async {
@@ -81,13 +70,13 @@ public struct AccountView: View {
   }
 
   private func handleAuthenticationScreenDismiss() {
-    if wasGuestBeforeUpgrade && isGuest && onUpgradeFailed != nil {
-      onUpgradeFailed?(AuthenticationError.signUpFailed(underlying: NSError(domain: "IdentityKit", code: -1, userInfo: [NSLocalizedDescriptionKey: "Upgrade was not completed"])))
+    if wasGuestBeforeUpgrade && isGuest {
+      onUpgradeFailed?(AuthenticationError.upgradeCancelled)
     }
     wasGuestBeforeUpgrade = false
   }
 
-private func handleSignOut() {
+  private func handleSignOut() async {
     isSigningOut = true
     defer { isSigningOut = false }
     do {
@@ -103,7 +92,7 @@ private func handleSignOut() {
       try await AccountService.shared.deleteAccount()
       dismiss()
     } catch {
-      print("Account deletion failed: \(error.localizedDescription)")
+      logger.error("Account deletion failed: \(error.localizedDescription)")
     }
   }
 
@@ -124,7 +113,7 @@ private func handleSignOut() {
       .sheet(isPresented: $presentingAuthenticationScreen, onDismiss: handleAuthenticationScreenDismiss) {
         AuthenticationScreen()
           .environment(authenticationService)
-          .authenticationProviders([.email, .apple, .google])
+          .authenticationProviders(authenticationProviders)
       }
       .sheet(isPresented: $presentingDeleteConfirmation) {
         AccountDeletionConfirmationDialog {
@@ -242,23 +231,14 @@ private func handleSignOut() {
   }
 
   private func iconForProvider(_ provider: String) -> String {
-    switch provider.lowercased() {
-    case "email":
-      return "envelope.fill"
-    case "google":
-      return "g.circle.fill"
-    case "apple":
-      return "apple.logo"
-    default:
-      return "person.fill"
-    }
+    AuthProviderMapper.iconName(for: provider)
   }
 
   @ViewBuilder
   private var actionsSection: some View {
     Section {
       Button(role: .destructive) {
-        Task { handleSignOut() }
+        Task { await handleSignOut() }
       } label: {
         HStack {
           Text("Sign Out")
@@ -275,6 +255,34 @@ private func handleSignOut() {
       } label: {
         Text("Delete Account")
       }
+    }
+  }
+}
+
+private enum AuthProviderMapper {
+  static func displayName(for providerID: String) -> String {
+    switch providerID {
+    case "email":
+      return "Email"
+    case "google.com":
+      return "Google"
+    case "apple.com":
+      return "Apple"
+    default:
+      return providerID
+    }
+  }
+
+  static func iconName(for providerID: String) -> String {
+    switch providerID {
+    case "email":
+      return "envelope.fill"
+    case "google.com":
+      return "g.circle.fill"
+    case "apple.com":
+      return "apple.logo"
+    default:
+      return "person.fill"
     }
   }
 }
