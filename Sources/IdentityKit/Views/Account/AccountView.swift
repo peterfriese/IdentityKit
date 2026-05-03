@@ -28,6 +28,7 @@ public struct AccountView: View {
   @State private var presentingAuthenticationScreen = false
   @State private var presentingDeleteConfirmation = false
   @State private var isSigningOut = false
+  @State private var wasGuestBeforeUpgrade = false
 
   public init(onUpgradeFailed: ((Error) -> Void)? = nil) {
     self.onUpgradeFailed = onUpgradeFailed
@@ -68,7 +69,15 @@ public struct AccountView: View {
   }
 
   private func handleUpgrade() async {
+    wasGuestBeforeUpgrade = isGuest
     presentingAuthenticationScreen = true
+  }
+
+  private func handleAuthenticationScreenDismiss() {
+    if wasGuestBeforeUpgrade && isGuest && onUpgradeFailed != nil {
+      onUpgradeFailed?(AuthenticationError.signUpFailed(underlying: NSError(domain: "IdentityKit", code: -1, userInfo: [NSLocalizedDescriptionKey: "Upgrade was not completed"])))
+    }
+    wasGuestBeforeUpgrade = false
   }
 
   private func handleSignOut() async {
@@ -105,10 +114,10 @@ public struct AccountView: View {
       .navigationTitle("Account")
       .platform.navigationBarTitleDisplayMode(.inline)
       .platform.doneButton { dismiss() }
-      .sheet(isPresented: $presentingAuthenticationScreen) {
+      .sheet(isPresented: $presentingAuthenticationScreen, onDismiss: handleAuthenticationScreenDismiss) {
         AuthenticationScreen()
           .environment(authenticationService)
-          .authenticationProviders([.email, .apple])
+          .authenticationProviders([.email, .apple, .google])
       }
       .sheet(isPresented: $presentingDeleteConfirmation) {
         AccountDeletionConfirmationDialog {
@@ -284,6 +293,7 @@ struct FlowLayout: Layout {
     var currentX: CGFloat = 0
     var currentY: CGFloat = 0
     var lineHeight: CGFloat = 0
+    var maxLineWidth: CGFloat = 0
 
     for subview in subviews {
       let size = subview.sizeThatFits(.unspecified)
@@ -297,10 +307,12 @@ struct FlowLayout: Layout {
       frames.append(CGRect(x: currentX, y: currentY, width: size.width, height: size.height))
       lineHeight = max(lineHeight, size.height)
       currentX += size.width + spacing
+      maxLineWidth = max(maxLineWidth, currentX)
     }
 
     let totalHeight = currentY + lineHeight
-    return (CGSize(width: maxWidth, height: totalHeight), frames)
+    let finalWidth = proposal.width ?? (maxLineWidth > 0 ? maxLineWidth - spacing : 0)
+    return (CGSize(width: finalWidth, height: totalHeight), frames)
   }
 }
 
