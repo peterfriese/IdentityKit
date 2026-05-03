@@ -25,6 +25,7 @@ struct AuthenticateWithGoogleButton: View {
 
   // MARK: - State
   @State private var isAuthenticating = false
+  @State private var errorMessage: String?
 
   private var mode: AuthenticationMode
 
@@ -70,6 +71,16 @@ struct AuthenticateWithGoogleButton: View {
     }
     .buttonStyle(SocialAuthenticationButtonStyle())
     .disabled(isAuthenticating)
+    .alert("Sign In Failed", isPresented: .init(
+      get: { errorMessage != nil },
+      set: { if !$0 { errorMessage = nil } }
+    )) {
+      Button("OK", role: .cancel) { }
+    } message: {
+      if let errorMessage {
+        Text(errorMessage)
+      }
+    }
     .task(id: isAuthenticating) {
       guard isAuthenticating else { return }
       defer { isAuthenticating = false }
@@ -79,9 +90,10 @@ struct AuthenticateWithGoogleButton: View {
         if success {
           dismiss()
         }
+      } catch let error as AuthenticationError {
+        errorMessage = error.localizedDescription
       } catch {
-        // Error is handled by the authentication service
-        // User can see error via service's errorMessage property
+        errorMessage = error.localizedDescription
       }
     }
   }

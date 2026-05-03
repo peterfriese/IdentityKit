@@ -31,14 +31,14 @@ extension AuthenticationService {
   @discardableResult
   func signInWithGoogle() async throws -> Bool {
     guard let clientID = FirebaseApp.app()?.options.clientID else {
-      throw AuthenticationError.googleSignInFailed
+      throw AuthenticationError.googleSignInFailed(underlying: nil)
     }
 
     GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
 
     #if os(iOS)
     guard let presentingViewController = getPresentingViewController() else {
-      throw AuthenticationError.googleSignInFailed
+      throw AuthenticationError.googleSignInFailed(underlying: nil)
     }
 
     do {
@@ -57,11 +57,11 @@ extension AuthenticationService {
       if error.code == .canceled {
         throw AuthenticationError.googleSignInCancelled
       }
-      throw AuthenticationError.googleSignInFailed
+      throw AuthenticationError.googleSignInFailed(underlying: error)
     }
     #elseif os(macOS)
     guard let window = NSApplication.shared.keyWindow else {
-      throw AuthenticationError.googleSignInFailed
+      throw AuthenticationError.googleSignInFailed(underlying: nil)
     }
 
     do {
@@ -80,7 +80,7 @@ extension AuthenticationService {
       if error.code == .canceled {
         throw AuthenticationError.googleSignInCancelled
       }
-      throw AuthenticationError.googleSignInFailed
+      throw AuthenticationError.googleSignInFailed(underlying: error)
     }
     #endif
   }
@@ -103,17 +103,21 @@ extension AuthenticationService {
 
   #if os(iOS)
   private func getPresentingViewController() -> UIViewController? {
-    guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-          let window = windowScene.windows.first,
-          let rootViewController = window.rootViewController else {
-      return nil
-    }
+    for scene in UIApplication.shared.connectedScenes {
+      guard let windowScene = scene as? UIWindowScene,
+            windowScene.activationState == .foregroundActive,
+            let window = windowScene.windows.first(where: { $0.isKeyWindow }),
+            let rootViewController = window.rootViewController else {
+        continue
+      }
 
-    var topController = rootViewController
-    while let presentedController = topController.presentedViewController {
-      topController = presentedController
+      var topController = rootViewController
+      while let presentedController = topController.presentedViewController {
+        topController = presentedController
+      }
+      return topController
     }
-    return topController
+    return nil
   }
   #endif
 }

@@ -12,7 +12,7 @@ public enum AuthenticationError: LocalizedError {
   case reauthenticationRequired
   case tokenRevocationFailed(underlying: Error)
   case upgradeCancelled
-  case googleSignInFailed
+  case googleSignInFailed(underlying: Error?)
   case googleSignInCancelled
   case missingGoogleIDToken
 
@@ -40,7 +40,10 @@ public enum AuthenticationError: LocalizedError {
       return "Failed to revoke authentication token: \(error.localizedDescription)"
     case .upgradeCancelled:
       return "Account upgrade was not completed"
-    case .googleSignInFailed:
+    case .googleSignInFailed(let underlying):
+      if let underlying {
+        return "Failed to sign in with Google: \(underlying.localizedDescription)"
+      }
       return "Failed to sign in with Google"
     case .googleSignInCancelled:
       return "Google sign in was cancelled"
