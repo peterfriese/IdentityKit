@@ -85,7 +85,7 @@ Luca (`luca`) is the project's skill manager. The `Lucafile` at the project root
 - Squash and merge unless history is important
 - Never push directly to main
 - **Use Conventional Commits**: Format commit messages as `type(scope): description`
-  - Types: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `build`
+  - Types: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `build`, `perf`, `ci`
   - Examples: `feat(account): add AccountView`, `fix(platform): resolve iOS/macOS compatibility`
   - PR titles should also follow this format
 
@@ -109,7 +109,7 @@ Luca (`luca`) is the project's skill manager. The `Lucafile` at the project root
 
 **Merging order:**
 - Merge infrastructure PRs first
-- Feature PRs should be rebased (not merged) onto main after infrastructure is merged
+- Feature PRs should be rebased (not merged) onto main after infrastructure is merged to maintain linear history
 - Avoid merging main into feature branches - this causes divergence and conflicts
 
 #### PR Structure
