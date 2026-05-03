@@ -84,3 +84,35 @@ Luca (`luca`) is the project's skill manager. The `Lucafile` at the project root
 - All changes go through feature branches and PRs
 - Squash and merge unless history is important
 - Never push directly to main
+- **Use Conventional Commits**: Format commit messages as `type(scope): description`
+  - Types: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `build`, `perf`, `ci`
+  - Examples: `feat(account): add AccountView`, `fix(platform): resolve iOS/macOS compatibility`
+  - PR titles should also follow this format
+
+### Planning & Branch Strategy
+
+**Before coding:**
+1. Map out dependencies and branch/PR structure
+2. Identify logical units that can be separated into independent PRs
+3. Plan infrastructure changes first, then features that depend on them
+
+**Commit strategy:**
+- Each commit = one logical change
+- Keep commits small and focused
+- Example good history:
+  ```
+  feat(platform): add PlatformProxy abstraction layer
+  fix(google): restore bundle: .module for image loading
+  refactor(account): centralize provider mapping logic
+  feat(account): add AccountView with guest/authenticated states
+  ```
+
+**Merging order:**
+- Merge infrastructure PRs first
+- Feature PRs should be rebased (not merged) onto main after infrastructure is merged to maintain linear history
+- Avoid merging main into feature branches - this causes divergence and conflicts
+
+#### PR Structure
+- Keep PRs atomic - one feature/fix per PR
+- PRs should have clear, focused scope
+- Infrastructure (fixes, refactors) should be merged before features that depend on them
