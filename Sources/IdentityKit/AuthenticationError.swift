@@ -11,7 +11,8 @@ public enum AuthenticationError: LocalizedError {
   case userDeletionFailed(underlying: Error)
   case reauthenticationRequired
   case tokenRevocationFailed(underlying: Error)
-  
+  case upgradeCancelled
+
   public var errorDescription: String? {
     switch self {
     case .signInFailed(let error):
@@ -34,6 +35,8 @@ public enum AuthenticationError: LocalizedError {
       return "Please sign in again to continue"
     case .tokenRevocationFailed(let error):
       return "Failed to revoke authentication token: \(error.localizedDescription)"
+    case .upgradeCancelled:
+      return "Account upgrade was not completed"
     }
   }
 }
