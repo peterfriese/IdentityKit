@@ -20,28 +20,17 @@ import SwiftUI
 
 extension PlatformProxy where Content: View {
     @ViewBuilder
-    public func toolbarRole(_ role: ToolbarRole) -> some View {
-        #if os(iOS)
-        content.toolbarRole(role)
-        #else
-        content
-        #endif
-    }
-}
-
-extension PlatformProxy where Content: View {
-    @ViewBuilder
     public func doneButton(_ action: @escaping () -> Void) -> some View {
         #if os(iOS)
         content.toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Done", action: action)
+                Button(LocalizedStringKey("Done"), action: action)
             }
         }
         #else
         content.toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done", action: action)
+            ToolbarItem(placement: .cancellationAction) {
+                Button(LocalizedStringKey("Done"), action: action)
             }
         }
         #endif

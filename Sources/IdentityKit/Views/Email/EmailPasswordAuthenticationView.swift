@@ -79,7 +79,6 @@ extension EmailPasswordAuthenticationView: View {
       LabeledContent {
         TextField("Email", text: $email)
           .platform.textInputAutocapitalization(.never)
-          .autocorrectionDisabled()
           .focused($focus, equals: .email)
           .submitLabel(.next)
           .onSubmit {
