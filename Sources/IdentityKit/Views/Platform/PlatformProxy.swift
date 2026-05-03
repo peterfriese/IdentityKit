@@ -39,13 +39,8 @@ public enum PlatformTitleDisplayMode: Sendable {
 }
 
 public enum PlatformTextInputAutocapitalization: Sendable {
-    case never
-    case sentences
-    case words
-    case allCharacters
-}
-
-public enum PlatformToolbarPlacement: Sendable {
-    case leading
-    case trailing
+  case never
+  case sentences
+  case words
+  case allCharacters
 }
