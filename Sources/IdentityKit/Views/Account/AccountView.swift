@@ -109,7 +109,21 @@ public struct AccountView: View {
       }
       .navigationTitle("Account")
       .platform.navigationBarTitleDisplayMode(.inline)
-      .platform.doneButton { dismiss() }
+      .toolbar {
+        #if os(iOS)
+        ToolbarItem(placement: .topBarTrailing) {
+          Button(role: .close) {
+            dismiss()
+          }
+        }
+        #else
+        ToolbarItem(placement: .cancellationAction) {
+          Button(role: .close) {
+            dismiss()
+          }
+        }
+        #endif
+      }
       .sheet(isPresented: $presentingAuthenticationScreen, onDismiss: handleAuthenticationScreenDismiss) {
         AuthenticationScreen()
           .environment(authenticationService)
