@@ -17,20 +17,27 @@
 //  limitations under the License.
 
 import SwiftUI
+import os
 
 @MainActor
 public struct AccountView: View {
   @Environment(AuthenticationService.self) private var authenticationService
   @Environment(\.dismiss) private var dismiss
 
+  private var authenticationProviders: [AuthenticationProvider]
   private var onUpgradeFailed: ((Error) -> Void)?
+  private let logger = Logger(subsystem: "dev.peterfriese.identitykit", category: "AccountView")
 
   @State private var presentingAuthenticationScreen = false
   @State private var presentingDeleteConfirmation = false
   @State private var isSigningOut = false
   @State private var wasGuestBeforeUpgrade = false
 
-  public init(onUpgradeFailed: ((Error) -> Void)? = nil) {
+  public init(
+    authenticationProviders: [AuthenticationProvider] = [.email, .apple, .google],
+    onUpgradeFailed: ((Error) -> Void)? = nil
+  ) {
+    self.authenticationProviders = authenticationProviders
     self.onUpgradeFailed = onUpgradeFailed
   }
 
@@ -80,14 +87,14 @@ public struct AccountView: View {
     wasGuestBeforeUpgrade = false
   }
 
-  private func handleSignOut() async {
+private func handleSignOut() {
     isSigningOut = true
     defer { isSigningOut = false }
     do {
       try authenticationService.signOut()
       dismiss()
     } catch {
-      print("Sign out failed: \(error.localizedDescription)")
+      logger.error("Sign out failed: \(error.localizedDescription)")
     }
   }
 
@@ -251,7 +258,7 @@ public struct AccountView: View {
   private var actionsSection: some View {
     Section {
       Button(role: .destructive) {
-        Task { await handleSignOut() }
+        Task { handleSignOut() }
       } label: {
         HStack {
           Text("Sign Out")

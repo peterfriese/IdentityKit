@@ -24,13 +24,13 @@ extension PlatformProxy where Content: View {
         #if os(iOS)
         content.toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Done", action: action)
+                Button(LocalizedStringKey("Done"), action: action)
             }
         }
         #else
         content.toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Done", action: action)
+                Button(LocalizedStringKey("Done"), action: action)
             }
         }
         #endif
