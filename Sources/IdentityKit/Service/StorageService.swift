@@ -113,11 +113,9 @@ final public class StorageService {
     let newSize = CGSize(width: size.width * scaleFactor, height: size.height * scaleFactor)
 
     let renderer = UIGraphicsImageRenderer(size: newSize)
-    guard let jpegData = renderer.jpegData(withCompressionQuality: compressionQuality, actions: { _ in
+    let jpegData = renderer.jpegData(withCompressionQuality: compressionQuality, actions: { _ in
       image.draw(in: CGRect(origin: .zero, size: newSize))
-    }) else {
-      throw AuthenticationError.storageError(underlying: NSError(domain: "StorageService", code: -2, userInfo: [NSLocalizedDescriptionKey: "Could not resize image"]))
-    }
+    })
 
     return jpegData
     #elseif canImport(AppKit)
