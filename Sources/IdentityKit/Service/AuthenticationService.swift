@@ -53,31 +53,31 @@ public enum AuthenticationState {
 @Observable
 final public class AuthenticationService {
   public static let shared = AuthenticationService()
-
+  
+  @ObservationIgnored
+  private nonisolated(unsafe) var _authStateHandle: AuthStateDidChangeListenerHandle?
+  
   private init() {
     setupAuthenticationListener()
     signInGuestAccount()
   }
-
-  deinit {
-    if let handle = authStateHandle {
+  
+  nonisolated deinit {
+    if let handle = _authStateHandle {
       Auth.auth().removeStateDidChangeListener(handle)
-      authStateHandle = nil
+    }
+  }
+  
+  private func setupAuthenticationListener() {
+    _authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+      self?.currentUser = user
+      self?.updateAuthenticationState()
     }
   }
 
   func signInGuestAccount() {
     if Auth.auth().currentUser == nil {
       Auth.auth().signInAnonymously()
-    }
-  }
-
-private nonisolated(unsafe) var authStateHandle: AuthStateDidChangeListenerHandle?
-  
-  private func setupAuthenticationListener() {
-    authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
-      self?.currentUser = user
-      self?.updateAuthenticationState()
     }
   }
 
@@ -128,5 +128,4 @@ private nonisolated(unsafe) var authStateHandle: AuthStateDidChangeListenerHandl
       updateAuthenticationState()
     }
   }
-
 }
