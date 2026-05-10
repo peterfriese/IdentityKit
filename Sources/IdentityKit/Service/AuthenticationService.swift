@@ -72,14 +72,8 @@ final public class AuthenticationService {
     }
   }
 
-  private nonisolated(unsafe) var authStateHandle: AuthStateDidChangeListenerHandle? {
-    willSet {
-      if let handle = authStateHandle {
-        Auth.auth().removeStateDidChangeListener(handle)
-      }
-    }
-  }
-
+private nonisolated(unsafe) var authStateHandle: AuthStateDidChangeListenerHandle?
+  
   private func setupAuthenticationListener() {
     authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
       self?.currentUser = user
