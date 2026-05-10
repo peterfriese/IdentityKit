@@ -35,98 +35,63 @@ final public class StorageService {
   private let maxDimension: CGFloat = 512
   private let compressionQuality: CGFloat = 0.8
 
-  private var isStorageAvailable: Bool? = nil
-
-  private init() {
-    validateStorageConfiguration()
-  }
-
-  deinit { }
-
-  private func validateStorageConfiguration() {
-    Task { [weak self, logger] in
-      guard self != nil else { return }
-      self?.storage.reference().getMetadata { [logger, weak self] _, error in
-        Task { @MainActor [logger, weak self] in
-          if let error {
-            logger.error("Firebase Storage is not configured. Please enable it in Firebase Console → Storage → Get started.")
-            self?.isStorageAvailable = false
-          } else {
-            self?.isStorageAvailable = true
-          }
-        }
-      }
-    }
-  }
+  private init() {}
 
   public func uploadAvatar(imageData: Data, for userId: String) async throws -> URL {
-    if isStorageAvailable == false {
-      throw AuthenticationError.storageNotEnabled
-    }
-
-    if isStorageAvailable == nil {
-      do {
-        try await Task.sleep(nanoseconds: 500_000_000)
-      } catch {
-        throw AuthenticationError.storageNotEnabled
-      }
-      if isStorageAvailable == false {
-        throw AuthenticationError.storageNotEnabled
-      }
-    }
-
     let resizedData = try resizeImage(imageData, maxDimension: maxDimension)
 
-    return try await withCheckedThrowingContinuation { continuation in
-      let avatarRef = storage.reference().child("avatars/\(userId)/profile.jpg")
-      let metadata = StorageMetadata()
-      metadata.contentType = "image/jpeg"
+    let avatarRef = storage.reference().child("avatars/\(userId)/profile.jpg")
+    let metadata = StorageMetadata()
+    metadata.contentType = "image/jpeg"
 
-      avatarRef.putData(resizedData, metadata: metadata) { [logger, weak self] _, error in
-        if let error = error as NSError? {
-          if error.code == -13010 {
-            Task { @MainActor [weak self] in
-              self?.isStorageAvailable = false
-            }
-            logger.error("Firebase Storage bucket not found. Please enable Cloud Storage in Firebase Console → Storage → Get started.")
-            continuation.resume(throwing: AuthenticationError.storageNotEnabled)
-          } else if error.code == -13020 {
-            logger.error("Firebase Storage unauthorized. Please check your Security Rules in Firebase Console → Storage → Rules.")
-            continuation.resume(throwing: AuthenticationError.uploadFailed(underlying: error))
-          } else {
-            logger.error("Avatar upload failed: \(error.localizedDescription)")
-            continuation.resume(throwing: AuthenticationError.uploadFailed(underlying: error))
-          }
+    do {
+      _ = try await avatarRef.putData(resizedData, metadata: metadata)
+      let url = try await downloadURL(from: avatarRef)
+      logger.info("Avatar uploaded successfully for user \(userId)")
+      return url
+    } catch let error as NSError {
+      if error.code == -13010 {
+        logger.error("Firebase Storage bucket not found. Please enable Cloud Storage in Firebase Console → Storage → Get started.")
+        throw AuthenticationError.storageNotEnabled
+      } else if error.code == -13020 {
+        logger.error("Firebase Storage unauthorized. Please check your Security Rules in Firebase Console → Storage → Rules.")
+        throw AuthenticationError.uploadFailed(underlying: error)
+      } else {
+        logger.error("Avatar upload failed: \(error.localizedDescription)")
+        throw AuthenticationError.uploadFailed(underlying: error)
+      }
+    } catch {
+      logger.error("Avatar upload failed: \(error.localizedDescription)")
+      throw AuthenticationError.uploadFailed(underlying: error)
+    }
+  }
+
+  private func downloadURL(from ref: StorageReference) async throws -> URL {
+    try await withCheckedThrowingContinuation { continuation in
+      ref.downloadURL { url, error in
+        if let error {
+          continuation.resume(throwing: error)
+        } else if let url {
+          continuation.resume(returning: url)
         } else {
-          avatarRef.downloadURL { [logger] url, error in
-            if let error {
-              logger.error("Failed to get download URL: \(error.localizedDescription)")
-              continuation.resume(throwing: AuthenticationError.uploadFailed(underlying: error))
-            } else if let url {
-              logger.info("Avatar uploaded successfully for user \(userId)")
-              continuation.resume(returning: url)
-            } else {
-              continuation.resume(throwing: AuthenticationError.uploadFailed(underlying: NSError(domain: "StorageService", code: -3)))
-            }
-          }
+          continuation.resume(throwing: AuthenticationError.uploadFailed(underlying: NSError(domain: "StorageService", code: -3)))
         }
       }
     }
   }
 
   public func deleteAvatar(for userId: String) async throws {
-    guard isStorageAvailable != false else {
-      throw AuthenticationError.storageNotEnabled
-    }
+    let avatarRef = storage.reference().child("avatars/\(userId)/profile.jpg")
+    try await deleteStorageRef(avatarRef)
+    logger.info("Avatar deleted successfully for user \(userId)")
+  }
 
+  private func deleteStorageRef(_ ref: StorageReference) async throws {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      let avatarRef = storage.reference().child("avatars/\(userId)/profile.jpg")
-      avatarRef.delete { [logger] error in
+      ref.delete { error in
         if let error {
-          logger.error("Failed to delete avatar: \(error.localizedDescription)")
-          continuation.resume(throwing: AuthenticationError.storageError(underlying: error))
+          continuation.resume(throwing: error)
         } else {
-          logger.info("Avatar deleted successfully for user \(userId)")
           continuation.resume()
         }
       }
@@ -147,12 +112,10 @@ final public class StorageService {
     let scaleFactor = min(maxDimension / size.width, maxDimension / size.height)
     let newSize = CGSize(width: size.width * scaleFactor, height: size.height * scaleFactor)
 
-    UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
-    image.draw(in: CGRect(origin: .zero, size: newSize))
-    let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-    UIGraphicsEndImageContext()
-
-    guard let resized = resizedImage, let jpegData = resized.jpegData(compressionQuality: compressionQuality) else {
+    let renderer = UIGraphicsImageRenderer(size: newSize)
+    guard let jpegData = renderer.jpegData(withCompressionQuality: compressionQuality, actions: { _ in
+      image.draw(in: CGRect(origin: .zero, size: newSize))
+    }) else {
       throw AuthenticationError.storageError(underlying: NSError(domain: "StorageService", code: -2, userInfo: [NSLocalizedDescriptionKey: "Could not resize image"]))
     }
 

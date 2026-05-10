@@ -128,7 +128,7 @@ public struct AccountView: View {
       .toolbar {
         #if os(iOS)
         ToolbarItem(placement: .topBarTrailing) {
-          Button {
+          Button(role: .cancel) {
             dismiss()
           } label: {
             Label("Close", systemImage: "xmark")
@@ -136,7 +136,7 @@ public struct AccountView: View {
         }
         #else
         ToolbarItem(placement: .cancellationAction) {
-          Button {
+          Button(role: .cancel) {
             dismiss()
           } label: {
             Label("Close", systemImage: "xmark")
