@@ -54,6 +54,41 @@ Or add it directly in Xcode:
 3. Download the `GoogleService-Info.plist` file and add it to your app
 4. Enable the authentication methods you want to use in the Firebase Console
 
+### Firebase Storage (Optional - for Avatar Upload)
+
+If you want to enable profile photo upload functionality, additional configuration is required:
+
+1. **Enable Firebase Storage**:
+   - Go to Firebase Console → Storage → Get started
+   - Select "Start in production mode" or "Start in test mode"
+   - Choose your Cloud Storage location
+   - Wait for the storage bucket to be created
+
+2. **Configure Storage Rules**:
+   For IdentityKit's avatar upload feature, add the following rules to your Firebase Storage rules:
+
+   ```
+   rules_version = '2';
+   service firebase.storage {
+     match /b/{bucket}/o {
+       // Allow users to read any avatar
+       match /avatars/{userId}/{imageName} {
+         allow read: if request.auth != null;
+         allow write: if request.auth.uid == userId;
+       }
+     }
+   }
+   ```
+
+   For production, you may want to add additional validation for file size and type.
+
+3. **Add Storage to your iOS project**:
+   - Add the `FirebaseStorage` Swift Package dependency to your project
+   - Initialize Firebase Storage in your app delegate (usually automatic with Firebase configuration)
+
+4. **Storage Error Handling**:
+   If Firebase Storage is not configured, avatar uploads will fail gracefully with a console warning. User profile changes (name, email) continue to work without Storage.
+
 ### Google Sign-In Setup
 
 If you want to use Google Sign-In, additional configuration is required:
@@ -300,6 +335,74 @@ All errors conform to Swift's `LocalizedError` protocol for automatic localizedD
 ## License
 
 IdentityKit is available under the MIT license. See the LICENSE file for more info.
+
+## Local Development (Advanced)
+
+IdentityKit can be used as a **local Tuist project** for downstream projects (like Sofia) that want to develop IdentityKit changes without publishing. This requires adding a `Project.swift` to IdentityKit.
+
+### Project.swift
+
+Create `Project.swift` at the root of IdentityKit:
+
+```swift
+import ProjectDescription
+
+let project = Project(
+    name: "IdentityKit",
+    targets: [
+        .target(
+            name: "IdentityKit",
+            destinations: [.iPhone, .iPad, .mac],
+            product: .staticFramework,
+            bundleId: "dev.peterfriese.IdentityKit",
+            deploymentTargets: .multiplatform(iOS: "26.0", macOS: "26.0"),
+            infoPlist: .default,
+            sources: ["Sources/IdentityKit/**"],
+            resources: ["Sources/IdentityKit/Assets.xcassets/**"],
+            dependencies: [
+                .external(name: "FirebaseAuth"),
+                .external(name: "FirebaseStorage"),
+                .external(name: "GoogleSignIn"),
+            ],
+            settings: .settings(
+                base: ["SWIFT_USE_EXPLICIT_MODULES": "NO"]
+            )
+        ),
+    ]
+)
+```
+
+### Using as Local Tuist Project
+
+In downstream projects (e.g., Sofia):
+
+1. Add to `Workspace.swift`:
+   ```swift
+   projects: [
+       "SofiaApp",
+       "Packages/**",
+       "/path/to/IdentityKit",  // Local IdentityKit
+   ]
+   ```
+
+2. Add to target dependencies in `Project.swift`:
+   ```swift
+   dependencies: [
+       .project(target: "IdentityKit", path: "/path/to/IdentityKit"),
+   ]
+   ```
+
+### Toggling Between Local and Remote
+
+| Mode | Project Reference | Package Reference |
+|------|-------------------|------------------|
+| Local (Development) | `.project(target: "IdentityKit", path: "...")` | N/A |
+| Remote (CI/Production) | N/A | `.external(name: "IdentityKit")` |
+
+When using remote mode, also add to `Tuist/Package.swift`:
+```swift
+.package(url: "https://github.com/peterfriese/IdentityKit.git", from: "0.4.1"),
+```
 
 ## Contribution
 

@@ -50,6 +50,22 @@ Luca (`luca`) is the project's skill manager. The `Lucafile` at the project root
 - **Skills go in `.agents/skills/`** — if Luca creates a `skills/` folder at the project root with agent subfolders, that's wrong. Remove it.
 - **Never create per-agent skill folders** — Luca creates subfolders for claude-code, github-copilot, gemini, opencode, antigravity, etc. Only the skills explicitly listed in the Lucafile should be installed.
 
+### Local Development Toggle
+
+IdentityKit can be consumed as:
+- **Remote SPM package** (default) — standard SPM consumption
+- **Local Tuist project** — for downstream projects (like Sofia) that want to develop locally
+
+When IdentityKit is used as a local Tuist project, a `Project.swift` file must exist at the repository root.
+
+**Toggle mechanism:**
+- Remote: IdentityKit referenced via SPM in `Tuist/Package.swift`
+- Local: IdentityKit referenced as `.project()` in downstream project's `Workspace.swift`
+
+**Impact on consumers:**
+- SPM consumers: Unaffected — `Package.swift` remains unchanged
+- Tuist consumers: Can switch between local/remote via configuration files
+
 ### Running Luca
 
 - Run `luca install` at session start to verify skills are loaded

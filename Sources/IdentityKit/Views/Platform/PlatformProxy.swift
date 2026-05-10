@@ -44,3 +44,7 @@ public enum PlatformTextInputAutocapitalization: Sendable {
   case words
   case allCharacters
 }
+
+public enum PlatformListStyle: Sendable {
+    case insetGrouped
+}
