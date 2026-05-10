@@ -15,6 +15,9 @@ public enum AuthenticationError: LocalizedError {
   case googleSignInFailed(underlying: Error?)
   case googleSignInCancelled
   case missingGoogleIDToken
+  case storageNotEnabled
+  case uploadFailed(underlying: Error)
+  case storageError(underlying: Error)
 
   public var errorDescription: String? {
     switch self {
@@ -49,6 +52,12 @@ public enum AuthenticationError: LocalizedError {
       return "Google sign in was cancelled"
     case .missingGoogleIDToken:
       return "Could not retrieve Google ID token"
+    case .storageNotEnabled:
+      return "Image upload unavailable. Please enable Cloud Storage in Firebase Console."
+    case .uploadFailed(let underlying):
+      return "Failed to upload image: \(underlying.localizedDescription)"
+    case .storageError(let underlying):
+      return "Storage error: \(underlying.localizedDescription)"
     }
   }
 }

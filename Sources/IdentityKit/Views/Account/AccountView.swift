@@ -49,19 +49,20 @@ public struct AccountView: View {
     authenticationService.isAuthenticated
   }
 
+  private var userDisplayName: String? {
+    authenticationService.currentUser?.displayName
+  }
+
   private var userEmail: String? {
     authenticationService.currentUser?.email
   }
 
-  private var isEmailVerified: Bool {
-    authenticationService.currentUser?.isEmailVerified ?? false
+  private var userPhotoURL: URL? {
+    authenticationService.currentUser?.photoURL
   }
 
-  private var providerNames: [String] {
-    guard let providerData = authenticationService.currentUser?.providerData else {
-      return []
-    }
-    return providerData.map { AuthProviderMapper.displayName(for: $0.providerID) }
+  private var isEmailVerified: Bool {
+    authenticationService.currentUser?.isEmailVerified ?? false
   }
 
   private func handleUpgrade() async {
@@ -99,27 +100,46 @@ public struct AccountView: View {
   public var body: some View {
     NavigationStack {
       List {
-        accountStatusSection
         if isAuthenticated {
-          accountDetailsSection
-          actionsSection
+          accountHeaderSection
+          Section {
+            NavigationLink {
+              PersonalInformationView()
+                .environment(authenticationService)
+            } label: {
+              Label("Personal Information", systemImage: "person.text.rectangle")
+            }
+
+            NavigationLink {
+              SignInSecurityView()
+                .environment(authenticationService)
+            } label: {
+              Label("Sign-In & Security", systemImage: "key.fill")
+            }
+          }
+          dangerZoneSection
         } else {
           guestSection
         }
       }
+      .platform.listStyle(.insetGrouped)
       .navigationTitle("Account")
       .platform.navigationBarTitleDisplayMode(.inline)
       .toolbar {
         #if os(iOS)
         ToolbarItem(placement: .topBarTrailing) {
-          Button(role: .close) {
+          Button(role: .cancel) {
             dismiss()
+          } label: {
+            Label("Close", systemImage: "xmark")
           }
         }
         #else
         ToolbarItem(placement: .cancellationAction) {
-          Button(role: .close) {
+          Button(role: .cancel) {
             dismiss()
+          } label: {
+            Label("Close", systemImage: "xmark")
           }
         }
         #endif
@@ -140,36 +160,109 @@ public struct AccountView: View {
   }
 
   @ViewBuilder
-  private var accountStatusSection: some View {
-    Section {
-      HStack(spacing: 16) {
-        Image(systemName: isAuthenticated ? "person.fill.checkmark" : "person.fill.questionmark")
-          .font(.system(size: 40))
-          .foregroundStyle(isAuthenticated ? .green : .orange)
-
-        VStack(alignment: .leading, spacing: 4) {
-          Text(isAuthenticated ? "Full Account" : "Guest Account")
-            .font(.headline)
-
-          if isGuest {
-            Text("Data is stored on this device only")
-              .font(.caption)
-              .foregroundStyle(.secondary)
+  private var accountHeaderSection: some View {
+    VStack(spacing: 8) {
+      if let photoURL = userPhotoURL {
+        AsyncImage(url: photoURL) { phase in
+          switch phase {
+          case .success(let image):
+            image
+              .resizable()
+              .aspectRatio(contentMode: .fill)
+          case .failure, .empty:
+            placeholderAvatar
+          @unknown default:
+            placeholderAvatar
           }
         }
+        .frame(width: 80, height: 80)
+        .clipShape(Circle())
+      } else {
+        placeholderAvatar
       }
-      .padding(.vertical, 8)
+
+      if let displayName = userDisplayName, !displayName.isEmpty {
+        Text(displayName)
+          .font(.title2)
+          .fontWeight(.bold)
+      } else if let email = userEmail {
+        Text(email)
+          .font(.title2)
+          .fontWeight(.bold)
+      }
+
+      if let email = userEmail, userDisplayName != nil && !userDisplayName!.isEmpty {
+        Text(email)
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+      }
+    }
+    .frame(maxWidth: .infinity)
+    .listRowBackground(Color.clear)
+    .padding(.vertical, 16)
+  }
+
+  private var placeholderAvatar: some View {
+    Image(systemName: "person.fill")
+      .font(.system(size: 40))
+      .foregroundStyle(.secondary)
+      .frame(width: 80, height: 80)
+      .background(Color.gray.opacity(0.2))
+      .clipShape(Circle())
+  }
+
+  @ViewBuilder
+  private var dangerZoneSection: some View {
+    Section {
+      Button(role: .destructive) {
+        Task { await handleSignOut() }
+      } label: {
+        Group {
+          if isSigningOut {
+            ProgressView()
+          } else {
+            Text("Sign Out")
+              .fontWeight(.medium)
+          }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+      }
+      .disabled(isSigningOut)
+    }
+
+    Section {
+      Button(role: .destructive) {
+        presentingDeleteConfirmation = true
+      } label: {
+        Text("Delete Account")
+          .fontWeight(.medium)
+        .frame(maxWidth: .infinity, alignment: .center)
+      }
+    } footer: {
+      Text("This action cannot be undone.")
+        .font(.caption)
     }
   }
 
   @ViewBuilder
   private var guestSection: some View {
-    Section {
-      VStack(alignment: .leading, spacing: 12) {
-        Label("Your data is only stored on this device", systemImage: "exclamationmark.triangle.fill")
-          .font(.subheadline)
-          .foregroundStyle(.orange)
+    VStack(spacing: 24) {
+      Image(systemName: "person.fill.questionmark")
+        .font(.system(size: 60))
+        .foregroundStyle(.orange)
+        .padding(.top, 40)
 
+      VStack(spacing: 8) {
+        Text("Guest Account")
+          .font(.title2)
+          .fontWeight(.bold)
+
+        Text("Your data is stored on this device only")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+      }
+
+      VStack(alignment: .leading, spacing: 12) {
         Text("Upgrade to a full account to:")
           .font(.subheadline)
           .fontWeight(.medium)
@@ -179,10 +272,13 @@ public struct AccountView: View {
           Label("Recover your account with email", systemImage: "envelope.fill")
           Label("Access your account from any device", systemImage: "globe")
         }
-        .font(.caption)
+        .font(.subheadline)
         .foregroundStyle(.secondary)
       }
-      .padding(.vertical, 8)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(.horizontal)
+
+      Spacer()
 
       Button {
         Task { await handleUpgrade() }
@@ -192,156 +288,9 @@ public struct AccountView: View {
           .padding(.vertical, 8)
       }
       .buttonStyle(.borderedProminent)
-    } header: {
-      Text("Benefits")
+      .padding(.horizontal)
+      .padding(.bottom, 32)
     }
-  }
-
-  @ViewBuilder
-  private var accountDetailsSection: some View {
-    Section("Account Details") {
-      if let email = userEmail {
-        HStack {
-          Text("Email")
-            .foregroundStyle(.secondary)
-          Spacer()
-          Text(email)
-          if isEmailVerified {
-            Image(systemName: "checkmark.seal.fill")
-              .foregroundStyle(.green)
-              .symbolRenderingMode(.hierarchical)
-          }
-        }
-      }
-
-      if !providerNames.isEmpty {
-        VStack(alignment: .leading, spacing: 8) {
-          Text("Sign-in methods")
-            .foregroundStyle(.secondary)
-
-          FlowLayout(spacing: 8) {
-            ForEach(providerNames, id: \.self) { provider in
-              providerPill(provider)
-            }
-          }
-        }
-        .padding(.vertical, 4)
-      }
-    }
-  }
-
-  @ViewBuilder
-  private func providerPill(_ provider: String) -> some View {
-    HStack(spacing: 6) {
-      Image(systemName: iconForProvider(provider))
-        .font(.caption)
-      Text(provider)
-        .font(.caption)
-    }
-    .padding(.horizontal, 10)
-    .padding(.vertical, 6)
-    .platform.secondaryBackground()
-    .clipShape(Capsule())
-  }
-
-  private func iconForProvider(_ provider: String) -> String {
-    AuthProviderMapper.iconName(for: provider)
-  }
-
-  @ViewBuilder
-  private var actionsSection: some View {
-    Section {
-      Button(role: .destructive) {
-        Task { await handleSignOut() }
-      } label: {
-        HStack {
-          Text("Sign Out")
-          Spacer()
-          if isSigningOut {
-            ProgressView()
-          }
-        }
-      }
-      .disabled(isSigningOut)
-
-      Button(role: .destructive) {
-        presentingDeleteConfirmation = true
-      } label: {
-        Text("Delete Account")
-      }
-    }
-  }
-}
-
-private enum AuthProviderMapper {
-  static func displayName(for providerID: String) -> String {
-    switch providerID {
-    case "email":
-      return "Email"
-    case "google.com":
-      return "Google"
-    case "apple.com":
-      return "Apple"
-    default:
-      return providerID
-    }
-  }
-
-  static func iconName(for providerID: String) -> String {
-    switch providerID {
-    case "email":
-      return "envelope.fill"
-    case "google.com":
-      return "g.circle.fill"
-    case "apple.com":
-      return "apple.logo"
-    default:
-      return "person.fill"
-    }
-  }
-}
-
-struct FlowLayout: Layout {
-  var spacing: CGFloat = 8
-
-  func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-    let result = arrangeSubviews(proposal: proposal, subviews: subviews)
-    return result.size
-  }
-
-  func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-    let result = arrangeSubviews(proposal: proposal, subviews: subviews)
-    for (index, frame) in result.frames.enumerated() {
-      subviews[index].place(at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY), proposal: .unspecified)
-    }
-  }
-
-  private func arrangeSubviews(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, frames: [CGRect]) {
-    let maxWidth = proposal.width ?? .infinity
-    var frames: [CGRect] = []
-    var currentX: CGFloat = 0
-    var currentY: CGFloat = 0
-    var lineHeight: CGFloat = 0
-    var maxLineWidth: CGFloat = 0
-
-    for subview in subviews {
-      let size = subview.sizeThatFits(.unspecified)
-
-      if currentX + size.width > maxWidth && currentX > 0 {
-        currentX = 0
-        currentY += lineHeight + spacing
-        lineHeight = 0
-      }
-
-      frames.append(CGRect(x: currentX, y: currentY, width: size.width, height: size.height))
-      lineHeight = max(lineHeight, size.height)
-      currentX += size.width + spacing
-      maxLineWidth = max(maxLineWidth, currentX)
-    }
-
-    let totalHeight = currentY + lineHeight
-    let finalWidth = proposal.width ?? (maxLineWidth > 0 ? maxLineWidth - spacing : 0)
-    return (CGSize(width: finalWidth, height: totalHeight), frames)
   }
 }
 
