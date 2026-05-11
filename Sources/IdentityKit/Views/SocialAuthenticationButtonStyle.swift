@@ -32,10 +32,10 @@ struct SocialAuthenticationButtonStyle: ButtonStyle {
         }
       }
       .overlay(
-        RoundedRectangle(cornerRadius: 8)
+        RoundedRectangle(cornerRadius: 22)
           .stroke(.tertiary, lineWidth: 1)
       )
-      .clipShape(RoundedRectangle(cornerRadius: 8))
+      .clipShape(RoundedRectangle(cornerRadius: 22))
       .animation(.spring(response: 0.2,
                          dampingFraction: 0.5),
                  value: configuration.isPressed)

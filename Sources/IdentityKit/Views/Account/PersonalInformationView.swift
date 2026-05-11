@@ -17,6 +17,7 @@
 //  limitations under the License.
 
 import SwiftUI
+import NukeUI
 
 struct PersonalInformationView: View {
   @Environment(AuthenticationService.self) private var authenticationService
@@ -112,15 +113,14 @@ struct PersonalInformationView: View {
   @ViewBuilder
   private var avatarImage: some View {
     if let photoURL = userPhotoURL {
-      AsyncImage(url: photoURL) { phase in
-        switch phase {
-        case .success(let image):
+      LazyImage(url: photoURL) { state in
+        if let image = state.image {
           image
             .resizable()
             .aspectRatio(contentMode: .fill)
-        case .failure, .empty:
+        } else if state.error != nil {
           placeholderAvatar
-        @unknown default:
+        } else {
           placeholderAvatar
         }
       }

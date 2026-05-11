@@ -18,6 +18,7 @@
 
 import SwiftUI
 import os.log
+import NukeUI
 
 @MainActor
 public struct AccountView: View {
@@ -163,15 +164,14 @@ public struct AccountView: View {
   private var accountHeaderSection: some View {
     VStack(spacing: 8) {
       if let photoURL = userPhotoURL {
-        AsyncImage(url: photoURL) { phase in
-          switch phase {
-          case .success(let image):
+        LazyImage(url: photoURL) { state in
+          if let image = state.image {
             image
               .resizable()
               .aspectRatio(contentMode: .fill)
-          case .failure, .empty:
+          } else if state.error != nil {
             placeholderAvatar
-          @unknown default:
+          } else {
             placeholderAvatar
           }
         }

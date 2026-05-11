@@ -20,6 +20,7 @@ import SwiftUI
 import PhotosUI
 import os.log
 import FirebaseAuth
+import NukeUI
 
 struct AvatarEditView: View {
   @Environment(AuthenticationService.self) private var authenticationService
@@ -57,6 +58,7 @@ struct AvatarEditView: View {
           .frame(maxWidth: .infinity)
           .padding(.vertical, 8)
         }
+        .listRowBackground(Color.clear)
 
         Section {
           PhotosPicker(selection: $selectedItem, matching: .images) {
@@ -84,6 +86,13 @@ struct AvatarEditView: View {
           Button {
             dismiss()
           } label: {
+            Label("Cancel", systemImage: "xmark")
+          }
+        }
+        ToolbarItem(placement: .confirmationAction) {
+          Button {
+            dismiss()
+          } label: {
             Label("Done", systemImage: "checkmark")
           }
         }
@@ -106,15 +115,14 @@ struct AvatarEditView: View {
       placeholderAvatar
       #endif
     } else if let photoURL = userPhotoURL {
-      AsyncImage(url: photoURL) { phase in
-        switch phase {
-        case .success(let image):
+      LazyImage(url: photoURL) { state in
+        if let image = state.image {
           image
             .resizable()
             .aspectRatio(contentMode: .fill)
-        case .failure, .empty:
+        } else if state.error != nil {
           placeholderAvatar
-        @unknown default:
+        } else {
           placeholderAvatar
         }
       }
