@@ -83,6 +83,8 @@ public struct AuthenticationScreen {
 extension AuthenticationScreen: View {
   public var body: some View {
     contentView
+      .padding()
+      .frame(maxHeight: .infinity, alignment: .bottom)
       .onPreferenceChange(AuthenticationErrorMessagePreferenceKey.self) { [errorBinding = $errorMessage] value in
         errorBinding.wrappedValue = value ?? ""
       }
@@ -91,14 +93,12 @@ extension AuthenticationScreen: View {
   @ViewBuilder
   private var contentView: some View {
     if flow == .reauthentication {
-      NavigationStack {
-        ReauthenticationScreenContent(
-          errorMessage: $errorMessage,
-          onSuccess: handleReauthenticationSuccess,
-          onFailure: handleReauthenticationFailure,
-          onCancel: handleCancellation
-        )
-      }
+      ReauthenticationScreenContent(
+        errorMessage: $errorMessage,
+        onSuccess: handleReauthenticationSuccess,
+        onFailure: handleReauthenticationFailure,
+        onCancel: handleCancellation
+      )
     } else {
       AuthScreenContent(
         flow: $flow,
@@ -157,8 +157,24 @@ private struct ReauthenticationScreenContent: View {
   }
 
   var body: some View {
-    List {
-      Section {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 16) {
+        HStack {
+          Text("Verify Identity")
+            .font(.largeTitle)
+            .fontWeight(.bold)
+          Spacer()
+          Button("Cancel") {
+            onCancel()
+          }
+        }
+
+        if !linkedProviderIDs.isEmpty {
+          Text("Select a method to verify your identity")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+
         if hasPassword {
           EmailPasswordAuthenticationView(
             onSuccess: onSuccess,
@@ -173,25 +189,15 @@ private struct ReauthenticationScreenContent: View {
         if hasGoogle {
           AuthenticateWithGoogleButton(.signIn, onSuccess: onSuccess, onFailure: onFailure)
         }
-      }
 
-      if let errorMessage = errorMessage.isEmpty ? nil : errorMessage {
-        Section {
+        if let errorMessage = errorMessage.isEmpty ? nil : errorMessage {
           Text(errorMessage)
             .foregroundStyle(.red)
         }
       }
+      .padding()
     }
-    .platform.listStyle(.insetGrouped)
-    .navigationTitle("Verify Identity")
-    .platform.navigationBarTitleDisplayMode(.inline)
-    .toolbar {
-      ToolbarItem(placement: .cancellationAction) {
-        Button("Cancel") {
-          onCancel()
-        }
-      }
-    }
+    .frame(maxHeight: .infinity, alignment: .bottom)
   }
 }
 
@@ -267,7 +273,6 @@ private struct AuthScreenContent: View {
       }
       .padding()
     }
-    .frame(maxHeight: .infinity, alignment: .bottom)
   }
 }
 
