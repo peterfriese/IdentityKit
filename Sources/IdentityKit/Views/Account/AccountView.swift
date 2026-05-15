@@ -63,7 +63,8 @@ public struct AccountView: View {
   }
 
   private var isEmailVerified: Bool {
-    authenticationService.currentUser?.isEmailVerified ?? false
+    let _ = authenticationService.currentUser
+    return authenticationService.currentUser?.isEmailVerified ?? false
   }
 
   private func handleUpgrade() async {
