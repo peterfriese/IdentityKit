@@ -69,6 +69,11 @@ public struct AuthenticationScreen {
     onReauthenticate?(.failure(error))
   }
 
+  private func handleCancellation() {
+    onReauthenticate?(.cancelled)
+    dismiss()
+  }
+
   private func switchFlow() {
     flow = flow == .login ? .signUp : .login
     errorMessage = ""
@@ -78,8 +83,6 @@ public struct AuthenticationScreen {
 extension AuthenticationScreen: View {
   public var body: some View {
     contentView
-      .padding()
-      .frame(maxHeight: .infinity, alignment: .bottom)
       .onPreferenceChange(AuthenticationErrorMessagePreferenceKey.self) { [errorBinding = $errorMessage] value in
         errorBinding.wrappedValue = value ?? ""
       }
@@ -88,45 +91,42 @@ extension AuthenticationScreen: View {
   @ViewBuilder
   private var contentView: some View {
     if flow == .reauthentication {
-      reauthenticationContent
+      NavigationStack {
+        ReauthenticationScreenContent(
+          errorMessage: $errorMessage,
+          onSuccess: handleReauthenticationSuccess,
+          onFailure: handleReauthenticationFailure,
+          onCancel: handleCancellation
+        )
+      }
     } else {
-      authContent
+      AuthScreenContent(
+        flow: $flow,
+        errorMessage: $errorMessage,
+        onSwitchFlow: switchFlow
+      )
     }
-  }
-
-  private var reauthenticationContent: some View {
-    ReauthenticationScreenContent(
-      errorMessage: $errorMessage,
-      onSuccess: handleReauthenticationSuccess,
-      onFailure: handleReauthenticationFailure
-    )
-  }
-
-  private var authContent: some View {
-    AuthScreenContent(
-      flow: flow,
-      errorMessage: $errorMessage,
-      onSwitchFlow: switchFlow
-    )
   }
 }
 
 @MainActor
 private struct ReauthenticationScreenContent: View {
   @Environment(AuthenticationService.self) private var authenticationService
-  @Environment(\.authenticationProviders) private var authenticationProviders
   @Binding var errorMessage: String
   private var onSuccess: () -> Void
   private var onFailure: (Error) -> Void
+  private var onCancel: () -> Void
 
   init(
     errorMessage: Binding<String>,
     onSuccess: @escaping () -> Void,
-    onFailure: @escaping (Error) -> Void
+    onFailure: @escaping (Error) -> Void,
+    onCancel: @escaping () -> Void
   ) {
     self._errorMessage = errorMessage
     self.onSuccess = onSuccess
     self.onFailure = onFailure
+    self.onCancel = onCancel
   }
 
   private var linkedProviderIDs: [String] {
@@ -148,20 +148,18 @@ private struct ReauthenticationScreenContent: View {
     linkedProviderIDs.contains("google.com")
   }
 
+  private var hasMultipleProviders: Bool {
+    var count = 0
+    if hasPassword { count += 1 }
+    if hasApple { count += 1 }
+    if hasGoogle { count += 1 }
+    return count > 1
+  }
+
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 16) {
-        Text("Verify Identity")
-          .font(.largeTitle)
-          .fontWeight(.bold)
-
-        if !linkedProviderIDs.isEmpty {
-          Text("Select a method to verify your identity")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-        }
-
-        if hasPassword && authenticationProviders.contains(.email) {
+    List {
+      Section {
+        if hasPassword {
           EmailPasswordAuthenticationView(
             onSuccess: onSuccess,
             onError: onFailure
@@ -169,24 +167,28 @@ private struct ReauthenticationScreenContent: View {
           .environment(\.authenticationFlow, .reauthentication)
         }
 
-        if !errorMessage.isEmpty {
+        if hasApple {
+          AuthenticateWithAppleButton(.signIn, onSuccess: onSuccess, onFailure: onFailure)
+        }
+        if hasGoogle {
+          AuthenticateWithGoogleButton(.signIn, onSuccess: onSuccess, onFailure: onFailure)
+        }
+      }
+
+      if let errorMessage = errorMessage.isEmpty ? nil : errorMessage {
+        Section {
           Text(errorMessage)
             .foregroundStyle(.red)
         }
-
-        if (hasPassword && authenticationProviders.contains(.email)) && (hasApple || hasGoogle) {
-          HStack {
-            VStack { Divider() }
-            Text("or")
-            VStack { Divider() }
-          }
-        }
-
-        if hasApple && authenticationProviders.contains(.apple) {
-          AuthenticateWithAppleButton(.signIn, onSuccess: onSuccess, onFailure: onFailure)
-        }
-        if hasGoogle && authenticationProviders.contains(.google) {
-          AuthenticateWithGoogleButton(.signIn, onSuccess: onSuccess, onFailure: onFailure)
+      }
+    }
+    .platform.listStyle(.insetGrouped)
+    .navigationTitle("Verify Identity")
+    .platform.navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .cancellationAction) {
+        Button("Cancel") {
+          onCancel()
         }
       }
     }
@@ -197,15 +199,15 @@ private struct ReauthenticationScreenContent: View {
 private struct AuthScreenContent: View {
   @Environment(\.authenticationProviders) private var authenticationProviders
   @Binding var errorMessage: String
-  @State private var flow: AuthenticationFlow
+  @Binding var flow: AuthenticationFlow
   private var onSwitchFlow: () -> Void
 
   init(
-    flow: AuthenticationFlow,
+    flow: Binding<AuthenticationFlow>,
     errorMessage: Binding<String>,
     onSwitchFlow: @escaping () -> Void
   ) {
-    self._flow = State(initialValue: flow)
+    self._flow = flow
     self._errorMessage = errorMessage
     self.onSwitchFlow = onSwitchFlow
   }
