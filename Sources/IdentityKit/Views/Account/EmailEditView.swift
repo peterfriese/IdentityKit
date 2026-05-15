@@ -80,16 +80,22 @@ struct EmailEditView: View {
       }
     }
     .sheet(isPresented: $showingReauth) {
-      ReauthenticationView { password in
-        Task {
-          await updateEmail(withPassword: password)
+      AuthenticationScreen(flow: .reauthentication) { result in
+        switch result {
+        case .success:
+          Task { await updateEmail() }
+        case .cancelled:
+          break
+        case .failure(let error):
+          errorMessage = error.localizedDescription
+          isSaving = false
         }
       }
     }
     .interactiveDismissDisabled(isSaving)
   }
 
-  private func updateEmail(withPassword password: String) async {
+  private func updateEmail() async {
     isSaving = true
     errorMessage = nil
 
@@ -100,8 +106,6 @@ struct EmailEditView: View {
         return
       }
 
-      let credential = EmailAuthProvider.credential(withEmail: user.email ?? newEmail, password: password)
-      try await user.reauthenticate(with: credential)
       try await user.updateEmail(to: newEmail)
       dismiss()
     } catch {

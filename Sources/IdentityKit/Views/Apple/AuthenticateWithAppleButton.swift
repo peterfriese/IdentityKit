@@ -15,21 +15,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
 import SwiftUI
 
 struct AuthenticateWithAppleButton: View {
-  // MARK: - Dependencies
   @Environment(AuthenticationService.self) private var authenticationService
   @Environment(\.dismiss) var dismiss
 
-  // MARK: - State
   @State private var isAuthenticating = false
 
   private var mode: AuthenticationMode
+  private var onSuccess: (() -> Void)?
+  private var onFailure: ((Error) -> Void)?
 
-  init(_ mode: AuthenticationMode = .continue) {
+  init(
+    _ mode: AuthenticationMode = .continue,
+    onSuccess: (() -> Void)? = nil,
+    onFailure: ((Error) -> Void)? = nil
+  ) {
     self.mode = mode
+    self.onSuccess = onSuccess
+    self.onFailure = onFailure
   }
 
   var body: some View {
@@ -37,7 +44,6 @@ struct AuthenticateWithAppleButton: View {
       isAuthenticating = true
     } label: {
       ViewThatFits(in: .horizontal) {
-        // First attempt: show both logo and text
         HStack(spacing: 8) {
           Image(systemName: "apple.logo")
             .font(.title)
@@ -49,7 +55,6 @@ struct AuthenticateWithAppleButton: View {
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
 
-        // Fallback: show only the logo
         Image(systemName: "apple.logo")
           .font(.title)
           .frame(width: 32, height: 32)
@@ -65,10 +70,18 @@ struct AuthenticateWithAppleButton: View {
 
       do {
         try await authenticationService.signInWithApple()
-        dismiss()
+        if let onSuccess {
+          onSuccess()
+        } else {
+          dismiss()
+        }
       }
       catch {
-        authenticationService.errorMessage = error.localizedDescription
+        if let onFailure {
+          onFailure(error)
+        } else {
+          authenticationService.errorMessage = error.localizedDescription
+        }
       }
     }
   }

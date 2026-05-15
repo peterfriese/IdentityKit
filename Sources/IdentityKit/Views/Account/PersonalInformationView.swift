@@ -25,6 +25,7 @@ struct PersonalInformationView: View {
   @State private var showingAvatarEdit = false
   @State private var showingNameEdit = false
   @State private var showingEmailEdit = false
+  @State private var showingPasswordEdit = false
 
   private var userDisplayName: String? {
     authenticationService.currentUser?.displayName
@@ -36,6 +37,21 @@ struct PersonalInformationView: View {
 
   private var userPhotoURL: URL? {
     authenticationService.currentUser?.photoURL
+  }
+
+  private var hasPasswordProvider: Bool {
+    guard let providerData = authenticationService.currentUser?.providerData else {
+      return false
+    }
+    return providerData.contains { $0.providerID == "password" || $0.providerID == "email" }
+  }
+
+  private var passwordButtonLabel: String {
+    hasPasswordProvider ? "Change Password" : "Set Password"
+  }
+
+  private var passwordRowSubtitle: String {
+    hasPasswordProvider ? "" : "Add a password to your account"
   }
 
   var body: some View {
@@ -85,6 +101,25 @@ struct PersonalInformationView: View {
               .foregroundStyle(.tertiary)
           }
         }
+
+        Button {
+          showingPasswordEdit = true
+        } label: {
+          HStack {
+            Text("Password")
+              .foregroundStyle(hasPasswordProvider ? .primary : .secondary)
+            Spacer()
+            if !hasPasswordProvider {
+              Text(passwordRowSubtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            Image(systemName: "chevron.right")
+              .font(.caption.weight(.semibold))
+              .foregroundStyle(.tertiary)
+          }
+        }
+        .disabled(!hasPasswordProvider)
       }
     }
     .platform.listStyle(.insetGrouped)
@@ -105,6 +140,12 @@ struct PersonalInformationView: View {
     .sheet(isPresented: $showingEmailEdit) {
       NavigationStack {
         EmailEditView()
+          .environment(authenticationService)
+      }
+    }
+    .sheet(isPresented: $showingPasswordEdit) {
+      NavigationStack {
+        PasswordEditView(mode: hasPasswordProvider ? .changePassword : .setPassword)
           .environment(authenticationService)
       }
     }
