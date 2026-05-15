@@ -157,46 +157,44 @@ private struct ReauthenticationScreenContent: View {
   }
 
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 16) {
-        HStack {
-          Text("Verify Identity")
-            .font(.largeTitle)
-            .fontWeight(.bold)
-          Spacer()
-          Button("Cancel") {
-            onCancel()
-          }
-        }
-
-        if !linkedProviderIDs.isEmpty {
-          Text("Select a method to verify your identity")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-        }
-
-        if hasPassword {
-          EmailPasswordAuthenticationView(
-            onSuccess: onSuccess,
-            onError: onFailure
-          )
-          .environment(\.authenticationFlow, .reauthentication)
-        }
-
-        if hasApple {
-          AuthenticateWithAppleButton(.signIn, onSuccess: onSuccess, onFailure: onFailure)
-        }
-        if hasGoogle {
-          AuthenticateWithGoogleButton(.signIn, onSuccess: onSuccess, onFailure: onFailure)
-        }
-
-        if let errorMessage = errorMessage.isEmpty ? nil : errorMessage {
-          Text(errorMessage)
-            .foregroundStyle(.red)
+    VStack {
+      HStack {
+        Text("Verify Identity")
+          .font(.largeTitle)
+          .fontWeight(.bold)
+        Spacer()
+        Button("Cancel") {
+          onCancel()
         }
       }
-      .padding()
+
+      if !linkedProviderIDs.isEmpty {
+        Text("Select a method to verify your identity")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+      }
+
+      if hasPassword {
+        EmailPasswordAuthenticationView(
+          onSuccess: onSuccess,
+          onError: onFailure
+        )
+        .environment(\.authenticationFlow, .reauthentication)
+      }
+
+      if hasApple {
+        AuthenticateWithAppleButton(.signIn, onSuccess: onSuccess, onFailure: onFailure)
+      }
+      if hasGoogle {
+        AuthenticateWithGoogleButton(.signIn, onSuccess: onSuccess, onFailure: onFailure)
+      }
+
+      if let errorMessage = errorMessage.isEmpty ? nil : errorMessage {
+        Text(errorMessage)
+          .foregroundStyle(.red)
+      }
     }
+    .padding()
     .frame(maxHeight: .infinity, alignment: .bottom)
   }
 }
@@ -227,52 +225,58 @@ private struct AuthScreenContent: View {
   }
 
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 16) {
-        Text(title)
+    VStack {
+      ZStack {
+        Text("Login")
           .font(.largeTitle)
           .fontWeight(.bold)
-
-        if authenticationProviders.contains(.email) {
-          EmailPasswordAuthenticationView()
-            .environment(\.authenticationFlow, flow)
-        }
-
-        if !errorMessage.isEmpty {
-          Text(errorMessage)
-            .foregroundStyle(.red)
-        }
-
-        if authenticationProviders.contains(.email) && (authenticationProviders.contains(.apple) || authenticationProviders.contains(.google)) {
-          HStack {
-            VStack { Divider() }
-            Text("or")
-            VStack { Divider() }
-          }
-        }
-
-        if authenticationProviders.contains(.apple) {
-          AuthenticateWithAppleButton(flow == .login ? .signIn : .signUp)
-        }
-        if authenticationProviders.contains(.google) {
-          AuthenticateWithGoogleButton(flow == .login ? .signIn : .signUp)
-        }
-
-        HStack {
-          Text(flow == .login ? "Don't have an account yet?" : "Already have an account?")
-          Button(action: {
-            withAnimation {
-              onSwitchFlow()
-            }
-          }) {
-            Text(flow == .signUp ? "Log in" : "Sign up")
-              .fontWeight(.semibold)
-          }
-        }
-        .padding(.top, 50)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .opacity(flow == .login ? 1 : 0)
+        Text("Sign up")
+          .font(.largeTitle)
+          .fontWeight(.bold)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .opacity(flow == .signUp ? 1 : 0)
       }
-      .padding()
+
+      if authenticationProviders.contains(.email) {
+        EmailPasswordAuthenticationView()
+          .environment(\.authenticationFlow, flow)
+      }
+
+      if !errorMessage.isEmpty {
+        Text(errorMessage)
+          .foregroundStyle(.red)
+      }
+
+      HStack {
+        VStack { Divider() }
+        Text("or")
+        VStack { Divider() }
+      }
+
+      if authenticationProviders.contains(.apple) {
+        AuthenticateWithAppleButton(flow == .login ? .signIn : .signUp)
+      }
+      if authenticationProviders.contains(.google) {
+        AuthenticateWithGoogleButton(flow == .login ? .signIn : .signUp)
+      }
+
+      HStack {
+        Text(flow == .login ? "Don't have an account yet?" : "Already have an account?")
+        Button(action: {
+          withAnimation {
+            onSwitchFlow()
+          }
+        }) {
+          Text(flow == .signUp ? "Log in" : "Sign up")
+            .fontWeight(.semibold)
+        }
+      }
+      .padding([.top, .bottom], 50)
     }
+    .padding()
+    .frame(maxHeight: .infinity, alignment: .bottom)
   }
 }
 
