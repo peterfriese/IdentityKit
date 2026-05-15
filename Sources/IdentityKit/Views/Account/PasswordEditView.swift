@@ -189,7 +189,7 @@ struct PasswordEditView: View {
   }
 
   private func savePassword() async {
-    if mode == .changePassword && hasPasswordProvider {
+    if currentPassword.isEmpty {
       showingReauth = true
     } else {
       await updatePassword()
