@@ -265,6 +265,7 @@ private struct AuthScreenContent: View {
         }
         .padding(.top, 50)
       }
+      .padding()
     }
   }
 }
