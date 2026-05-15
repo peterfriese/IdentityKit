@@ -267,6 +267,7 @@ private struct AuthScreenContent: View {
       }
       .padding()
     }
+    .frame(maxHeight: .infinity, alignment: .bottom)
   }
 }
 
