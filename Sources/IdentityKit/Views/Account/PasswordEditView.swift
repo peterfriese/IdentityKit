@@ -34,6 +34,7 @@ struct PasswordEditView: View {
   private let mode: PasswordEditMode
   private let validator = PasswordValidator()
   private let policy = PasswordPolicy.standard
+  private let debounceDuration: UInt64 = 300_000_000
 
   @State private var currentPassword: String = ""
   @State private var newPassword: String = ""
@@ -47,6 +48,9 @@ struct PasswordEditView: View {
   @State private var isSaving: Bool = false
   @State private var errorMessage: String?
 
+  @State private var validationResult: PasswordValidationResult = PasswordValidationResult(isValid: false)
+  @State private var lastValidatedPassword: String = ""
+
   init(mode: PasswordEditMode = .changePassword) {
     self.mode = mode
   }
@@ -58,12 +62,12 @@ struct PasswordEditView: View {
     return providerData.contains { $0.providerID == "password" || $0.providerID == "email" }
   }
 
-  private var passwordsMatch: Bool {
-    newPassword == confirmPassword && !newPassword.isEmpty
+  private var currentSignInProvider: String? {
+    nil
   }
 
-  private var validationResult: PasswordValidationResult {
-    validator.validate(newPassword)
+  private var passwordsMatch: Bool {
+    newPassword == confirmPassword && !newPassword.isEmpty
   }
 
   private var canProceed: Bool {
@@ -82,7 +86,40 @@ struct PasswordEditView: View {
     validator.description(for: requirement)
   }
 
+  private func validatePassword() {
+    guard newPassword != lastValidatedPassword else { return }
+    lastValidatedPassword = newPassword
+    validationResult = validator.validate(newPassword)
+  }
+
   var body: some View {
+    Group {
+      if hasPasswordProvider {
+        passwordForm
+      } else {
+        unavailableView
+      }
+    }
+    .platform.listStyle(.insetGrouped)
+    .navigationTitle(mode == .setPassword ? "Set Password" : "Change Password")
+    .platform.navigationBarTitleDisplayMode(.inline)
+    .sheet(isPresented: $showingReauth) {
+      AuthenticationScreen(flow: .reauthentication) { result in
+        switch result {
+        case .success:
+          Task { await updatePassword() }
+        case .cancelled:
+          break
+        case .failure(let error):
+          errorMessage = error.localizedDescription
+        }
+      }
+    }
+    .interactiveDismissDisabled(isSaving)
+  }
+
+  @ViewBuilder
+  private var passwordForm: some View {
     List {
       if mode == .changePassword {
         currentPasswordSection
@@ -100,9 +137,6 @@ struct PasswordEditView: View {
         }
       }
     }
-    .platform.listStyle(.insetGrouped)
-    .navigationTitle(mode == .setPassword ? "Set Password" : "Change Password")
-    .platform.navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(placement: .cancellationAction) {
         Button {
@@ -119,19 +153,47 @@ struct PasswordEditView: View {
         .disabled(!canProceed || isSaving)
       }
     }
-    .sheet(isPresented: $showingReauth) {
-      AuthenticationScreen(flow: .reauthentication) { result in
-        switch result {
-        case .success:
-          Task { await updatePassword() }
-        case .cancelled:
-          break
-        case .failure(let error):
-          errorMessage = error.localizedDescription
+  }
+
+  @ViewBuilder
+  private var unavailableView: some View {
+    VStack(spacing: 24) {
+      Image(systemName: "lock.slash")
+        .font(.system(size: 60))
+        .foregroundStyle(.secondary)
+
+      VStack(spacing: 8) {
+        Text("Password Changes Unavailable")
+          .font(.title2)
+          .fontWeight(.bold)
+
+        Text("Password changes are only available for accounts signed in with email and password. Since you're signed in with another provider, you can't change your password here. To change your password, you'll need to do so in your account settings.")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+          .multilineTextAlignment(.center)
+      }
+
+      Spacer()
+
+      Button {
+        dismiss()
+      } label: {
+        Text("Done")
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 8)
+      }
+      .buttonStyle(.borderedProminent)
+    }
+    .padding(32)
+    .toolbar {
+      ToolbarItem(placement: .cancellationAction) {
+        Button {
+          dismiss()
+        } label: {
+          Label("Cancel", systemImage: "xmark")
         }
       }
     }
-    .interactiveDismissDisabled(isSaving)
   }
 
   @ViewBuilder
@@ -147,6 +209,12 @@ struct PasswordEditView: View {
   private var newPasswordSection: some View {
     Section {
       SecureFieldWithToggle(password: $newPassword, showPassword: $showNewPassword, placeholder: "New password")
+        .onChange(of: newPassword) { _, _ in
+          Task {
+            try? await Task.sleep(nanoseconds: debounceDuration)
+            validatePassword()
+          }
+        }
     } header: {
       Text("New Password")
     } footer: {

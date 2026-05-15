@@ -10,11 +10,12 @@
 //
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 import SwiftUI
 import os.log
@@ -32,11 +33,46 @@ struct EmailEditView: View {
   @State private var isSaving: Bool = false
   @State private var errorMessage: String?
 
+  private var hasPasswordProvider: Bool {
+    guard let providerData = authenticationService.currentUser?.providerData else {
+      return false
+    }
+    return providerData.contains { $0.providerID == "password" || $0.providerID == "email" }
+  }
+
   private var canProceed: Bool {
     !newEmail.isEmpty && newEmail == confirmEmail && newEmail.contains("@")
   }
 
   var body: some View {
+    Group {
+      if hasPasswordProvider {
+        emailForm
+      } else {
+        unavailableView
+      }
+    }
+    .platform.listStyle(.insetGrouped)
+    .navigationTitle("Change Email")
+    .platform.navigationBarTitleDisplayMode(.inline)
+    .sheet(isPresented: $showingReauth) {
+      AuthenticationScreen(flow: .reauthentication) { result in
+        switch result {
+        case .success:
+          Task { await updateEmail() }
+        case .cancelled:
+          break
+        case .failure(let error):
+          errorMessage = error.localizedDescription
+          isSaving = false
+        }
+      }
+    }
+    .interactiveDismissDisabled(isSaving)
+  }
+
+  @ViewBuilder
+  private var emailForm: some View {
     List {
       Section {
         TextField("New Email", text: $newEmail)
@@ -60,9 +96,6 @@ struct EmailEditView: View {
         }
       }
     }
-    .platform.listStyle(.insetGrouped)
-    .navigationTitle("Change Email")
-    .platform.navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(placement: .cancellationAction) {
         Button {
@@ -79,20 +112,47 @@ struct EmailEditView: View {
         .disabled(!canProceed)
       }
     }
-    .sheet(isPresented: $showingReauth) {
-      AuthenticationScreen(flow: .reauthentication) { result in
-        switch result {
-        case .success:
-          Task { await updateEmail() }
-        case .cancelled:
-          break
-        case .failure(let error):
-          errorMessage = error.localizedDescription
-          isSaving = false
+  }
+
+  @ViewBuilder
+  private var unavailableView: some View {
+    VStack(spacing: 24) {
+      Image(systemName: "envelope.badge.shuffle.halftone")
+        .font(.system(size: 60))
+        .foregroundStyle(.secondary)
+
+      VStack(spacing: 8) {
+        Text("Email Changes Unavailable")
+          .font(.title2)
+          .fontWeight(.bold)
+
+        Text("Email changes are only available for accounts signed in with email and password. Since you're signed in with another provider, you can't change your email here. To change your email, you'll need to do so in your account settings.")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+          .multilineTextAlignment(.center)
+      }
+
+      Spacer()
+
+      Button {
+        dismiss()
+      } label: {
+        Text("Done")
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 8)
+      }
+      .buttonStyle(.borderedProminent)
+    }
+    .padding(32)
+    .toolbar {
+      ToolbarItem(placement: .cancellationAction) {
+        Button {
+          dismiss()
+        } label: {
+          Label("Cancel", systemImage: "xmark")
         }
       }
     }
-    .interactiveDismissDisabled(isSaving)
   }
 
   private func updateEmail() async {

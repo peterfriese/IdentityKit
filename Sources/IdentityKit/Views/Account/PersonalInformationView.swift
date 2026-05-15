@@ -107,7 +107,7 @@ struct PersonalInformationView: View {
         } label: {
           HStack {
             Text("Password")
-              .foregroundStyle(hasPasswordProvider ? .primary : .secondary)
+              .foregroundStyle(.primary)
             Spacer()
             if !hasPasswordProvider {
               Text(passwordRowSubtitle)
@@ -119,7 +119,6 @@ struct PersonalInformationView: View {
               .foregroundStyle(.tertiary)
           }
         }
-        .disabled(!hasPasswordProvider)
       }
     }
     .platform.listStyle(.insetGrouped)
