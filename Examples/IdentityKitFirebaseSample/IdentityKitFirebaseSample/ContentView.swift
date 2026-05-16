@@ -43,6 +43,7 @@ struct ContentView: View {
 
         Section {
           Button {
+            print("[ContentView] Account button tapped")
             presentingAccount = true
           } label: {
             Label("Account", systemImage: "person.circle")
@@ -52,6 +53,7 @@ struct ContentView: View {
         Section {
           Button("Sign \(authenticationService.isAuthenticated ? "out" : "in")") {
             if authenticationService.isAuthenticated {
+              print("[ContentView] Sign out button tapped")
               do {
                 try authenticationService.signOut()
               }
@@ -60,6 +62,7 @@ struct ContentView: View {
               }
             }
             else {
+              print("[ContentView] Sign in button tapped")
               presentingAuthenticationDialog.toggle()
             }
           }

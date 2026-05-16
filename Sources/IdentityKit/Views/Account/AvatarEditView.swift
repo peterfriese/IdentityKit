@@ -10,19 +10,19 @@
 //
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import SwiftUI
 import PhotosUI
 import os.log
-import FirebaseAuth
 import NukeUI
 
 struct AvatarEditView: View {
+  @Environment(AccountService.self) private var accountService
   @Environment(AuthenticationService.self) private var authenticationService
   @Environment(\.dismiss) private var dismiss
 
@@ -34,7 +34,7 @@ struct AvatarEditView: View {
   @State private var errorMessage: String?
 
   private var userPhotoURL: URL? {
-    authenticationService.currentUser?.photoURL
+    authenticationService.userPhotoURL
   }
 
   private var userId: String? {
@@ -141,7 +141,6 @@ struct AvatarEditView: View {
 
   private func loadAndSaveImage(from item: PhotosPickerItem?) async {
     guard let item = item else { return }
-
     guard let userId else {
       errorMessage = "User not authenticated"
       return
@@ -158,16 +157,7 @@ struct AvatarEditView: View {
       }
 
       let downloadURL = try await StorageService.shared.uploadAvatar(imageData: imageData, for: userId)
-
-      guard let user = Auth.auth().currentUser else {
-        errorMessage = "User not authenticated"
-        isSaving = false
-        return
-      }
-
-      let changeRequest = user.createProfileChangeRequest()
-      changeRequest.photoURL = downloadURL
-      try await changeRequest.commitChanges()
+      try await accountService.updatePhotoURL(downloadURL)
 
       selectedImageData = imageData
     }
@@ -186,5 +176,6 @@ struct AvatarEditView: View {
 
 #Preview {
   AvatarEditView()
+    .environment(AccountService.shared)
     .environment(AuthenticationService.shared)
 }

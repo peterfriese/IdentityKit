@@ -21,8 +21,12 @@ import Foundation
 import Observation
 import CryptoKit
 import AuthenticationServices
+import os
+
+private let logger = Logger(subsystem: "dev.peterfriese.identitykit", category: "AppleDialog")
 
 public func authenticateWithApple() async throws -> (ASAuthorizationAppleIDCredential, String) {
+  logger.debug("Starting Sign in with Apple flow")
   return try await AuthenticateWithAppleDialog().authenticate()
 }
 
@@ -59,13 +63,43 @@ extension AuthenticateWithAppleDialog: ASAuthorizationControllerDelegate {
   func authorizationController(controller: ASAuthorizationController,
                                didCompleteWithAuthorization authorization: ASAuthorization) {
     if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+
+      let hasFullName = appleIDCredential.fullName != nil
+      let hasGivenName = appleIDCredential.fullName?.givenName != nil
+      let hasFamilyName = appleIDCredential.fullName?.familyName != nil
+      let hasEmail = appleIDCredential.email != nil
+      let hasIdentityToken = appleIDCredential.identityToken != nil
+      let hasAuthorizationCode = appleIDCredential.authorizationCode != nil
+      let userIdentifier = appleIDCredential.user
+
+      logger.debug("Apple credential received - user: \(userIdentifier), hasFullName: \(hasFullName), hasGivenName: \(hasGivenName), hasFamilyName: \(hasFamilyName), hasEmail: \(hasEmail), hasIdentityToken: \(hasIdentityToken), hasAuthorizationCode: \(hasAuthorizationCode)")
+
+      if let email = appleIDCredential.email {
+        logger.info("Apple email received: \(email)")
+      } else {
+        logger.debug("Apple email NOT received (this is normal for subsequent sign-ins)")
+      }
+
+      if let fullName = appleIDCredential.fullName {
+        let nameParts: [String] = [
+          fullName.givenName.map { "givenName=\($0)" },
+          fullName.familyName.map { "familyName=\($0)" },
+          fullName.nickname.map { "nickname=\($0)" }
+        ].compactMap { $0 }
+        logger.info("Apple fullName received: \(nameParts.joined(separator: ", "))")
+      } else {
+        logger.debug("Apple fullName NOT received (this is normal for subsequent sign-ins)")
+      }
+
       if let nonce = currentNonce {
         continuation?.resume(returning: (appleIDCredential, nonce))
       } else {
+        logger.error("No nonce available when Apple credential received")
         continuation?.resume(throwing: AuthenticationError.appleAuthenticationFailed)
       }
     }
     else {
+      logger.error("Authorization failed: credential is not ASAuthorizationAppleIDCredential")
       continuation?.resume(throwing: AuthenticationError.missingAppleIDToken)
     }
     continuation = nil
@@ -73,6 +107,7 @@ extension AuthenticateWithAppleDialog: ASAuthorizationControllerDelegate {
 
   func authorizationController(controller: ASAuthorizationController,
                                didCompleteWithError error: Error) {
+    logger.error("Sign in with Apple failed: \(error.localizedDescription)")
     continuation?.resume(throwing: AuthenticationError.signInFailed(underlying: error))
     continuation = nil
   }

@@ -10,11 +10,11 @@
 //
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import SwiftUI
 import os.log
@@ -43,7 +43,7 @@ public struct AccountView: View {
   }
 
   private var isGuest: Bool {
-    authenticationService.isGuestAccount
+    authenticationService.userIsAnonymous
   }
 
   private var isAuthenticated: Bool {
@@ -51,20 +51,19 @@ public struct AccountView: View {
   }
 
   private var userDisplayName: String? {
-    authenticationService.currentUser?.displayName
+    authenticationService.userDisplayName
   }
 
   private var userEmail: String? {
-    authenticationService.currentUser?.email
+    authenticationService.userEmail
   }
 
   private var userPhotoURL: URL? {
-    authenticationService.currentUser?.photoURL
+    authenticationService.userPhotoURL
   }
 
   private var isEmailVerified: Bool {
-    let _ = authenticationService.currentUser
-    return authenticationService.currentUser?.isEmailVerified ?? false
+    authenticationService.userIsEmailVerified
   }
 
   private func handleUpgrade() async {
@@ -80,6 +79,7 @@ public struct AccountView: View {
   }
 
   private func handleSignOut() async {
+    logger.debug("Sign out button tapped in AccountView")
     isSigningOut = true
     defer { isSigningOut = false }
     do {
@@ -107,6 +107,7 @@ public struct AccountView: View {
           Section {
             NavigationLink {
               PersonalInformationView()
+                .environment(AccountService.shared)
                 .environment(authenticationService)
             } label: {
               Label("Personal Information", systemImage: "person.text.rectangle")

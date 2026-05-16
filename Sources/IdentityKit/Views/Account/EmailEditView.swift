@@ -18,75 +18,31 @@
 //
 
 import SwiftUI
-import os.log
-import FirebaseAuth
 
 struct EmailEditView: View {
+  @Environment(AccountService.self) private var accountService
   @Environment(AuthenticationService.self) private var authenticationService
   @Environment(\.dismiss) private var dismiss
 
-  private let logger = Logger(subsystem: "dev.peterfriese.identitykit", category: "EmailEditView")
-
-  @State private var newEmail: String = ""
-  @State private var confirmEmail: String = ""
-  @State private var showingReauth: Bool = false
-  @State private var isSaving: Bool = false
+  @State private var email: String = ""
+  @State private var showingReauthentication = false
   @State private var errorMessage: String?
+  @State private var error: Error?
 
-  private var hasPasswordProvider: Bool {
-    guard let providerData = authenticationService.currentUser?.providerData else {
-      return false
-    }
-    return providerData.contains { $0.providerID == "password" || $0.providerID == "email" }
+  private var currentEmail: String? {
+    authenticationService.userEmail
   }
 
-  private var canProceed: Bool {
-    !newEmail.isEmpty && newEmail == confirmEmail && newEmail.contains("@")
+  private var canSave: Bool {
+    !email.isEmpty && email != currentEmail
   }
 
   var body: some View {
-    Group {
-      if hasPasswordProvider {
-        emailForm
-      } else {
-        unavailableView
-      }
-    }
-    .platform.listStyle(.insetGrouped)
-    .navigationTitle("Change Email")
-    .platform.navigationBarTitleDisplayMode(.inline)
-    .sheet(isPresented: $showingReauth) {
-      AuthenticationScreen(flow: .reauthentication) { result in
-        switch result {
-        case .success:
-          Task { await updateEmail() }
-        case .cancelled:
-          break
-        case .failure(let error):
-          errorMessage = error.localizedDescription
-          isSaving = false
-        }
-      }
-    }
-    .interactiveDismissDisabled(isSaving)
-  }
-
-  @ViewBuilder
-  private var emailForm: some View {
     List {
       Section {
-        TextField("New Email", text: $newEmail)
-        TextField("Confirm Email", text: $confirmEmail)
+        emailTextField
       } header: {
-        Text("Email Address")
-      } footer: {
-        if newEmail.isEmpty || confirmEmail.isEmpty {
-          Text("Enter your new email address")
-        } else if newEmail != confirmEmail {
-          Text("Email addresses do not match")
-        } else if !newEmail.contains("@") {
-          Text("Enter a valid email address")
-        }
+        Text("Email")
       }
 
       if let errorMessage {
@@ -96,6 +52,9 @@ struct EmailEditView: View {
         }
       }
     }
+    .platform.listStyle(.insetGrouped)
+    .navigationTitle("Edit Email")
+    .platform.navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(placement: .cancellationAction) {
         Button {
@@ -106,80 +65,64 @@ struct EmailEditView: View {
       }
 
       ToolbarItem(placement: .confirmationAction) {
-        Button("Next") {
-          showingReauth = true
+        Button {
+          showingReauthentication = true
+        } label: {
+          Label("Save", systemImage: "checkmark")
         }
-        .disabled(!canProceed)
+        .disabled(!canSave)
+      }
+    }
+    .onAppear {
+      loadCurrentEmail()
+    }
+    .sheet(isPresented: $showingReauthentication) {
+      NavigationStack {
+        AuthenticationScreen(flow: .reauthentication) { result in
+          showingReauthentication = false
+          switch result {
+          case .success:
+            Task {
+              await updateEmail()
+            }
+          case .cancelled:
+            break
+          case .failure(let error):
+            errorMessage = error.localizedDescription
+          }
+        }
       }
     }
   }
 
-  @ViewBuilder
-  private var unavailableView: some View {
-    VStack(spacing: 24) {
-      Image(systemName: "envelope.badge.shuffle.halftone")
-        .font(.system(size: 60))
-        .foregroundStyle(.secondary)
+  private var emailTextField: some View {
+    TextField("Email", text: $email)
+      .textContentType(.emailAddress)
+  }
 
-      VStack(spacing: 8) {
-        Text("Email Changes Unavailable")
-          .font(.title2)
-          .fontWeight(.bold)
-
-        Text("Email changes are only available for accounts signed in with email and password. Since you're signed in with another provider, you can't change your email here. To change your email, you'll need to do so in your account settings.")
-          .font(.subheadline)
-          .foregroundStyle(.secondary)
-          .multilineTextAlignment(.center)
-      }
-
-      Spacer()
-
-      Button {
-        dismiss()
-      } label: {
-        Text("Done")
-          .frame(maxWidth: .infinity)
-          .padding(.vertical, 8)
-      }
-      .buttonStyle(.borderedProminent)
-    }
-    .padding(32)
-    .toolbar {
-      ToolbarItem(placement: .cancellationAction) {
-        Button {
-          dismiss()
-        } label: {
-          Label("Cancel", systemImage: "xmark")
-        }
-      }
-    }
+  private func loadCurrentEmail() {
+    email = currentEmail ?? ""
   }
 
   private func updateEmail() async {
-    isSaving = true
-    errorMessage = nil
-
     do {
-      guard let user = Auth.auth().currentUser else {
-        errorMessage = "User not authenticated"
-        isSaving = false
-        return
-      }
-
-      try await user.updateEmail(to: newEmail)
+      try await accountService.updateEmail(email)
       dismiss()
-    } catch {
-      logger.error("Failed to update email: \(error.localizedDescription)")
+    }
+    catch AuthenticationError.reauthenticationRequired {
+      errorMessage = AuthenticationError.reauthenticationRequired.errorDescription
+      showingReauthentication = true
+    }
+    catch {
       errorMessage = "Failed to update email. Please try again."
     }
-
-    isSaving = false
   }
 }
 
 #Preview {
   NavigationStack {
     EmailEditView()
+      .environment(AccountService.shared)
       .environment(AuthenticationService.shared)
   }
 }
