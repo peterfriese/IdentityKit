@@ -46,15 +46,7 @@ extension AuthenticationService {
   func signInWithApple() async throws -> Bool {
     let (appleIDCredential, nonce) = try await authenticateWithApple()
 
-    let displayNameFromApple: String?
-    if let fullName = appleIDCredential.fullName {
-      let nameParts = [fullName.givenName, fullName.familyName].compactMap { $0 }
-      displayNameFromApple = nameParts.isEmpty ? nil : nameParts.joined(separator: " ")
-    } else {
-      displayNameFromApple = nil
-    }
-
-    logger.debug("Creating Firebase credential - displayNameFromApple: \(String(describing: displayNameFromApple)), emailFromApple: \(String(describing: appleIDCredential.email))")
+    logger.debug("Creating Firebase credential - emailFromApple: \(String(describing: appleIDCredential.email))")
 
     guard let idTokenString = appleIDCredential.idTokenString else {
       logger.error("No identity token from Apple")
@@ -84,25 +76,6 @@ extension AuthenticationService {
       updateAuthenticationState()
       refreshUser()
 
-      // Firebase doesn't automatically store displayName from Apple credentials
-      // We need to manually update the user's profile when Apple provides the name
-      // (Apple only provides name/email on first authorization)
-      if let displayName = displayNameFromApple, !displayName.isEmpty {
-        logger.debug("Saving displayName to Firebase user profile: \(displayName)")
-        let changeRequest = Auth.auth().currentUser?.createProfileChangeRequest()
-        changeRequest?.displayName = displayName
-        try await changeRequest?.commitChanges()
-        logger.info("Successfully saved displayName to Firebase user profile")
-
-        // Force reload from Firebase to get the updated profile
-        try await Auth.auth().currentUser?.reload()
-
-        // Wait briefly for Firebase to propagate the change, then sync
-        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-        updateAuthenticationState()
-        refreshUser()
-      }
-
       // Log the Firebase user state after sign-in
       if let user = Auth.auth().currentUser {
         logger.debug("Firebase user after sign-in - uid: \(user.uid), displayName: \(String(describing: user.displayName)), email: \(String(describing: user.email)), isAnonymous: \(user.isAnonymous)")
@@ -126,27 +99,6 @@ extension AuthenticationService {
         // after account deletion and re-authentication
         updateAuthenticationState()
         refreshUser()
-
-        // Even when signing in with existing credential, we might want to save the name
-        // if it's the first time we have it and it's not already saved
-        if let displayName = displayNameFromApple, !displayName.isEmpty {
-          let currentDisplayName = Auth.auth().currentUser?.displayName
-          if currentDisplayName == nil || currentDisplayName?.isEmpty == true {
-            logger.debug("Saving displayName to Firebase user profile (re-auth): \(displayName)")
-            let changeRequest = Auth.auth().currentUser?.createProfileChangeRequest()
-            changeRequest?.displayName = displayName
-            try await changeRequest?.commitChanges()
-            logger.info("Successfully saved displayName to Firebase user profile")
-
-            // Force reload from Firebase to get the updated profile
-            try await Auth.auth().currentUser?.reload()
-
-            // Wait briefly for Firebase to propagate the change, then sync
-            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-            updateAuthenticationState()
-            refreshUser()
-          }
-        }
 
         // Log the Firebase user state after sign-in with existing credential
         if let user = Auth.auth().currentUser {
