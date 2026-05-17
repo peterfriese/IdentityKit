@@ -4,7 +4,7 @@
 
 | Feature | Status | Implementation Plan |
 |---------|--------|---------------------|
-| AccountView Redesign | In Progress | See `IMPLEMENTATION_PLAN.md` |
+| AccountView Redesign | In Progress | See `docs/IMPLEMENTATION_PLAN.md` |
 
 ## Backlog
 
@@ -30,7 +30,10 @@
 
 ## Documentation
 
-- **AGENTS.md** - Agent guidelines and process rules
-- **IMPLEMENTATION_PLAN.md** - Detailed plan for current feature
-- **README.md** - Package documentation and setup instructions
-- **CHANGELOG.md** - Version history and changes
+| File | Purpose |
+|------|---------|
+| `README.md` | Package documentation and setup |
+| `AGENTS.md` | Agent guidelines and process rules |
+| `BACKLOG.md` | Feature backlog and technical debt |
+| `docs/IMPLEMENTATION_PLAN.md` | Detailed implementation plan for current feature |
+| `CHANGELOG.md` | Version history and changes |
