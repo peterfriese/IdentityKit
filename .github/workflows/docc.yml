@@ -6,9 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+# Allow the job to push to the gh-pages branch
+permissions:
+  contents: write
+
 jobs:
   docc:
-    name: Generate Documentation
+    name: Generate and Deploy Documentation
     runs-on: macos-latest
     steps:
       - name: Checkout
@@ -19,15 +23,8 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Generate Documentation
-        run: |
-          swift package --allow-writing-to-directory .build/documentation \
-            generate-documentation --target IdentityKit --disable-indexing \
-            --transform-for-static-hosting --hosting-base-path IdentityKit \
-            --output-path .build/documentation
-
-      - name: Upload Documentation
-        uses: actions/upload-artifact@v4
+      - name: Deploy to GitHub Pages
+        uses: apple/swift-docc-plugin@v1
         with:
-          name: documentation
-          path: .build/documentation
+          target: IdentityKit
+          hosting-base-path: IdentityKit
