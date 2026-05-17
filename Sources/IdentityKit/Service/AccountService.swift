@@ -53,7 +53,7 @@ final public class AccountService {
     let changeRequest = user.createProfileChangeRequest()
     changeRequest.displayName = displayName.isEmpty ? nil : displayName
     try await changeRequest.commitChanges()
-    authenticationService.refreshUser()
+    refreshUser()
   }
 
   public func updateEmail(_ email: String) async throws {
@@ -63,7 +63,7 @@ final public class AccountService {
 
     do {
       try await user.updateEmail(to: email)
-      authenticationService.refreshUser()
+      refreshUser()
     }
     catch let error as NSError where error.requiresReauthentication {
       throw AuthenticationError.reauthenticationRequired
@@ -78,7 +78,7 @@ final public class AccountService {
     let changeRequest = user.createProfileChangeRequest()
     changeRequest.photoURL = url
     try await changeRequest.commitChanges()
-    authenticationService.refreshUser()
+    refreshUser()
   }
 
   public func deleteAccount() async throws {
