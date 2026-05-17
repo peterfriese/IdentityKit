@@ -86,16 +86,30 @@ extension AuthenticationService {
   }
 
   private func linkOrSignIn(with credential: AuthCredential) async throws -> Bool {
-    do {
-      try await link(with: credential)
-      return true
-    } catch let error as NSError where error.credentialAlreadyInUse {
-      if let updatedCredential = error.userInfo[AuthErrors.userInfoUpdatedCredentialKey] as? AuthCredential {
-        try await signIn(with: updatedCredential)
+    let currentUser = Auth.auth().currentUser
+
+    // Only allow linking from anonymous users
+    if currentUser?.isAnonymous == true {
+      do {
+        try await link(with: credential)
         return true
-      } else {
-        throw AuthenticationError.credentialAlreadyInUse(underlying: error)
+      } catch let error as NSError where error.credentialAlreadyInUse {
+        // Credential already in use - try signing in with existing credential
+        if let updatedCredential = error.userInfo[AuthErrors.userInfoUpdatedCredentialKey] as? AuthCredential {
+          try await signIn(with: updatedCredential)
+          return true
+        } else {
+          throw AuthenticationError.credentialAlreadyInUse(underlying: error)
+        }
+      } catch {
+        throw AuthenticationError.signInFailed(underlying: error)
       }
+    }
+
+    // Not anonymous - try direct sign-in
+    do {
+      try await signIn(with: credential)
+      return true
     } catch {
       throw AuthenticationError.signInFailed(underlying: error)
     }

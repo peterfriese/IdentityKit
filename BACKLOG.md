@@ -2,7 +2,7 @@
 
 ## Current Feature
 
-_(No active feature - see backlog below)_
+Phase 2: Account Management - Implementation in progress
 
 ## Implementation Phases
 
@@ -15,21 +15,22 @@ _(No active feature - see backlog below)_
 | Critical | Fix typo `errorMesage` → `errorMessage` | Completed | Phase 1 - EmailPasswordAuthenticationView.swift:41 |
 | Critical | Configure docc generation | Completed | Phase 1 - Add docc to Package.swift or CI workflow |
 
-### Phase 2: Platform Parity
+### Phase 2: Account Management (Focus: SiwA, SiwG, Email/Password)
 
 | Priority | Feature | Status | Implementation Plan |
 |----------|---------|--------|---------------------|
-| High | macOS email/password reauthentication UI | Not Started | Phase 2 - Remove #if canImport(UIKit) guard |
-| High | Enable macOS account deletion | Not Started | Phase 2 - Implement EmailPasswordDeleteUserOperation for macOS |
+| High | Remove email change (make non-drillable) | Completed | Keep email display in PersonalInformationView, remove navigation |
+| High | Hide password row for non-password providers | Completed | Hide row for SiwA/SiwG users (no password to change) |
+| High | Scope account linking to anonymous only | Completed | Add isAnonymous check in AuthenticationService link methods |
+| Medium | Verify name change for all providers | Not Started | Test SiwA, SiwG, Email/Password |
+| Medium | Verify password change for all providers | Not Started | Test Email/Password only |
 
-### Phase 3: Backlog (Existing Items)
+### Phase 3: Platform Parity
 
 | Priority | Feature | Status | Implementation Plan |
 |----------|---------|--------|---------------------|
-| High | Password linking for social accounts | Not Started | Phase 3 - Use `link()` instead of `updatePassword()` |
-| High | Set password UI for social accounts | Not Started | Phase 3 - Enable form in PasswordEditView for Apple/Google |
-| High | Email pre-population in reauthentication mode | Not Started | Phase 3 - Populate email field from currentUser |
-| Medium | Password validation debounce race condition fix | Not Started | Phase 3 - Add task cancellation in validation |
+| High | macOS email/password reauthentication UI | Not Started | Phase 3 - Remove #if canImport(UIKit) guard |
+| High | Enable macOS account deletion | Not Started | Phase 3 - Implement EmailPasswordDeleteUserOperation for macOS |
 
 ### Phase 4: Testing
 
@@ -56,8 +57,7 @@ _(No active feature - see backlog below)_
 |-------|--------|-------|
 | Email/Password account deletion only works on iOS | Not Started | `#if canImport(UIKit)` guard in AccountService+Email.swift blocks on macOS |
 | Firebase `updateEmail(to:)` deprecated | Completed | Should use `sendEmailVerification(beforeUpdatingEmail:)` instead |
-| Password linking for social accounts (PR #27) | Not Started | `updatePassword()` fails for users without password provider - use `link()` instead |
-| Set password UI hidden for social accounts (PR #27) | Not Started | PasswordEditView hides form in .setPassword mode for Apple/Google users |
+| Account linking allows non-anonymous users | Completed | Scoped to anonymous → SiwA/SiwG/Email only |
 | Reauthentication email empty (PR #27) | Not Started | Email field not populated in reauthentication mode |
 | Password validation debounce race condition (PR #27) | Not Started | Tasks spawn without cancelling previous ones |
 | Public APIs lack documentation | Completed | All public types and methods need docc comments |

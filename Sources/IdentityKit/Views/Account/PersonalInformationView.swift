@@ -25,7 +25,6 @@ struct PersonalInformationView: View {
 
   @State private var showingAvatarEdit = false
   @State private var showingNameEdit = false
-  @State private var showingEmailEdit = false
   @State private var showingPasswordEdit = false
 
   var body: some View {
@@ -61,36 +60,26 @@ struct PersonalInformationView: View {
           }
         }
 
-        Button {
-          showingEmailEdit = true
-        } label: {
-          HStack {
-            Text("Email")
-              .foregroundStyle(.primary)
-            Spacer()
-            Text(authenticationService.userEmail ?? "Not set")
-              .foregroundStyle(.secondary)
-            Image(systemName: "chevron.right")
-              .font(.caption.weight(.semibold))
-              .foregroundStyle(.tertiary)
-          }
+        HStack {
+          Text("Email")
+            .foregroundStyle(.primary)
+          Spacer()
+          Text(authenticationService.userEmail ?? "Not set")
+            .foregroundStyle(.secondary)
         }
 
-        Button {
-          showingPasswordEdit = true
-        } label: {
-          HStack {
-            Text("Password")
-              .foregroundStyle(.primary)
-            Spacer()
-            if !hasPasswordProvider {
-              Text(passwordRowSubtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        if hasPasswordProvider {
+          Button {
+            showingPasswordEdit = true
+          } label: {
+            HStack {
+              Text("Password")
+                .foregroundStyle(.primary)
+              Spacer()
+              Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
             }
-            Image(systemName: "chevron.right")
-              .font(.caption.weight(.semibold))
-              .foregroundStyle(.tertiary)
           }
         }
       }
@@ -108,13 +97,6 @@ struct PersonalInformationView: View {
     .sheet(isPresented: $showingNameEdit) {
       NavigationStack {
         NameEditView()
-          .environment(AccountService.shared)
-          .environment(authenticationService)
-      }
-    }
-    .sheet(isPresented: $showingEmailEdit) {
-      NavigationStack {
-        EmailEditView()
           .environment(AccountService.shared)
           .environment(authenticationService)
       }
@@ -159,10 +141,6 @@ struct PersonalInformationView: View {
       return false
     }
     return providerData.contains { $0.providerID == "password" || $0.providerID == "email" }
-  }
-
-  private var passwordRowSubtitle: String {
-    hasPasswordProvider ? "" : "Add a password to your account"
   }
 }
 
