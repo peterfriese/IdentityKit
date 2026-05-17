@@ -18,6 +18,9 @@
 
 import SwiftUI
 import IdentityKit
+import os
+
+private let logger = Logger(subsystem: "dev.peterfriese.identitykit", category: "ContentView")
 
 struct ContentView: View {
   @State var presentingAuthenticationDialog = false
@@ -43,6 +46,7 @@ struct ContentView: View {
 
         Section {
           Button {
+            logger.debug("Account button tapped")
             presentingAccount = true
           } label: {
             Label("Account", systemImage: "person.circle")
@@ -52,14 +56,16 @@ struct ContentView: View {
         Section {
           Button("Sign \(authenticationService.isAuthenticated ? "out" : "in")") {
             if authenticationService.isAuthenticated {
+              logger.debug("Sign out button tapped")
               do {
                 try authenticationService.signOut()
               }
               catch {
-                print(error.localizedDescription)
+                logger.error("Sign out failed: \(error.localizedDescription)")
               }
             }
             else {
+              logger.debug("Sign in button tapped")
               presentingAuthenticationDialog.toggle()
             }
           }
@@ -77,7 +83,7 @@ struct ContentView: View {
       }
       .sheet(isPresented: $presentingAccount) {
         AccountView { error in
-          print("Upgrade failed: \(error.localizedDescription)")
+          logger.error("Upgrade failed: \(error.localizedDescription)")
         }
         .environment(authenticationService)
       }

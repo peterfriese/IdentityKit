@@ -30,12 +30,10 @@ extension EnvironmentValues {
 
 @MainActor
 struct EmailPasswordAuthenticationView {
-  // MARK: - Dependencies
   @Environment(AuthenticationService.self) private var authenticationService
   @Environment(\.authenticationFlow) private var flow
   @Environment(\.dismiss) private var dismiss
 
-  // MARK: - Private properties
   @State private var email = ""
   @State private var password = ""
   @State private var confirmPassword = ""
@@ -44,21 +42,53 @@ struct EmailPasswordAuthenticationView {
 
   @FocusState private var focus: FocusableField?
 
+  private var onSuccess: (() -> Void)?
+  private var onError: ((Error) -> Void)?
+
+  init(
+    onSuccess: (() -> Void)? = nil,
+    onError: ((Error) -> Void)? = nil
+  ) {
+    self.onSuccess = onSuccess
+    self.onError = onError
+  }
+
   private var isValid: Bool {
     return if flow == .login {
       !email.isEmpty && !password.isEmpty
+    } else if flow == .reauthentication {
+      !password.isEmpty
     } else {
       !email.isEmpty && !password.isEmpty && password == confirmPassword
+    }
+  }
+
+  private var title: String {
+    switch flow {
+    case .login:
+      return "Log in with password"
+    case .signUp:
+      return "Sign up"
+    case .reauthentication:
+      return "Continue"
     }
   }
 
   private func signInWithEmailPassword() async {
     do {
       try await authenticationService.signIn(withEmail: email, password: password)
-      dismiss()
+      if let onSuccess {
+        onSuccess()
+      } else {
+        dismiss()
+      }
     }
     catch {
-      errorMesage = error.localizedDescription
+      if let onError {
+        onError(error)
+      } else {
+        errorMesage = error.localizedDescription
+      }
     }
   }
 
@@ -68,7 +98,11 @@ struct EmailPasswordAuthenticationView {
       dismiss()
     }
     catch {
-      errorMesage = error.localizedDescription
+      if let onError {
+        onError(error)
+      } else {
+        errorMesage = error.localizedDescription
+      }
     }
   }
 }
@@ -76,27 +110,29 @@ struct EmailPasswordAuthenticationView {
 extension EmailPasswordAuthenticationView: View {
   var body: some View {
     VStack {
-      LabeledContent {
-        TextField("Email", text: $email)
-          .platform.textInputAutocapitalization(.never)
-          .focused($focus, equals: .email)
-          .submitLabel(.next)
-          .onSubmit {
-            self.focus = .password
-          }
-      } label: {
-        Image(systemName: "at")
+      if flow != .reauthentication {
+        LabeledContent {
+          TextField("Email", text: $email)
+            .platform.textInputAutocapitalization(.never)
+            .focused($focus, equals: .email)
+            .submitLabel(.next)
+            .onSubmit {
+              self.focus = .password
+            }
+        } label: {
+          Image(systemName: "at")
+        }
+        .padding(.vertical, 6)
+        .background(Divider(), alignment: .bottom)
+        .padding(.bottom, 4)
       }
-      .padding(.vertical, 6)
-      .background(Divider(), alignment: .bottom)
-      .padding(.bottom, 4)
 
       LabeledContent {
         SecureField("Password", text: $password)
           .focused($focus, equals: .password)
           .submitLabel(.go)
           .onSubmit {
-            Task { await signInWithEmailPassword() }
+            Task { await submitAction() }
           }
       } label: {
         Image(systemName: "lock")
@@ -128,13 +164,10 @@ extension EmailPasswordAuthenticationView: View {
       }
 
       Button(action: {
-        Task {
-          if flow == .login { await signInWithEmailPassword() }
-          else { await signUpWithEmailPassword() }
-        }
+        Task { await submitAction() }
       }) {
         if authenticationService.authenticationState != .authenticating {
-          Text(flow == .login ? "Log in with password" : "Sign up")
+          Text(title)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity)
         } else {
@@ -150,6 +183,16 @@ extension EmailPasswordAuthenticationView: View {
       .buttonStyle(.borderedProminent)
     }
     .preference(key: AuthenticationErrorMessagePreferenceKey.self, value: errorMesage)
+  }
+
+  private func submitAction() async {
+    if flow == .login {
+      await signInWithEmailPassword()
+    } else if flow == .reauthentication {
+      await signInWithEmailPassword()
+    } else {
+      await signUpWithEmailPassword()
+    }
   }
 }
 

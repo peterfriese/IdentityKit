@@ -20,6 +20,9 @@
 import Observation
 import CryptoKit
 import AuthenticationServices
+import os
+
+private let logger = Logger(subsystem: "dev.peterfriese.identitykit", category: "AppleAuthService")
 
 extension Data {
   var utf8String: String? {
@@ -43,7 +46,10 @@ extension AuthenticationService {
   func signInWithApple() async throws -> Bool {
     let (appleIDCredential, nonce) = try await authenticateWithApple()
 
+    logger.debug("Creating Firebase credential - emailFromApple: \(String(describing: appleIDCredential.email))")
+
     guard let idTokenString = appleIDCredential.idTokenString else {
+      logger.error("No identity token from Apple")
       throw AuthenticationError.missingAppleIDToken
     }
 
@@ -52,19 +58,62 @@ extension AuthenticationService {
                                                    fullName: appleIDCredential.fullName)
 
     do {
-      try await link(with: credential)
+      // Check if we have an existing authenticated non-guest user
+      let hasExistingUser = Auth.auth().currentUser != nil && !Auth.auth().currentUser!.isAnonymous
+
+      if hasExistingUser {
+        // Link the credential to existing user
+        try await link(with: credential)
+        logger.info("Successfully linked Apple credential to Firebase user")
+      } else {
+        // Sign in fresh - this is needed after account deletion to get a clean session
+        try await signIn(with: credential)
+        logger.info("Successfully signed in with Apple credential")
+      }
+
+      // Force sync of auth state - Firebase's auth listener may not fire reliably
+      // after account deletion and re-authentication
+      updateAuthenticationState()
+      refreshUser()
+
+      // Log the Firebase user state after sign-in
+      if let user = Auth.auth().currentUser {
+        logger.debug("Firebase user after sign-in - uid: \(user.uid), displayName: \(String(describing: user.displayName)), email: \(String(describing: user.email)), isAnonymous: \(user.isAnonymous)")
+      }
+
       return true
     }
     catch let error as NSError where error.credentialAlreadyInUse {
+      logger.info("Apple credential already in use, attempting to sign in with existing credential")
+
       if let updatedCredential = error.userInfo[AuthErrors.userInfoUpdatedCredentialKey] as? AuthCredential {
+        // When credential is already in use, we need to sign out first and then sign in
+        // This ensures a clean Firebase session after account deletion
+        try Auth.auth().signOut()
+        logger.info("Signed out to clear stale session")
+
         try await signIn(with: updatedCredential)
+        logger.info("Successfully signed in with existing Apple credential")
+
+        // Force sync of auth state - Firebase's auth listener may not fire reliably
+        // after account deletion and re-authentication
+        updateAuthenticationState()
+        refreshUser()
+
+        // Log the Firebase user state after sign-in with existing credential
+        if let user = Auth.auth().currentUser {
+          logger.debug("Firebase user after existing credential sign-in - uid: \(user.uid), displayName: \(String(describing: user.displayName)), email: \(String(describing: user.email)), isAnonymous: \(user.isAnonymous)")
+        }
+
         return true
       }
       else {
+        logger.error("credentialAlreadyInUse error but no updated credential available")
         throw AuthenticationError.credentialAlreadyInUse(underlying: error)
       }
     }
     catch {
+      logger.error("Sign in with Apple failed: \(error.localizedDescription)")
       throw AuthenticationError.signInFailed(underlying: error)
     }
   }

@@ -88,6 +88,8 @@ List {
 | `EmailEditView.swift` | Email change with reauth |
 | `AvatarEditView.swift` | Photo picker for avatar |
 | `StorageService.swift` | Avatar upload/delete via Firebase Storage |
+| `AuthenticationLinkResult.swift` | Account linking result enum (created in Phase 10, removed in Phase 12) |
+| `AccountLinkConflictDialog.swift` | Optional pre-built dialog component (Phase 11) |
 
 ## Modified Files
 
@@ -192,9 +194,9 @@ List {
 - [x] Verify build passes
 
 ### Phase 12: Rollback to Phase 11
-- [ ] Rolled back to Phase 11 state (removed all Phase 12/13 account linking code)
-- [ ] Reverted to previous version without account linking dialogs
-- [ ] Verified build passes
+- [x] Rolled back to Phase 11 state (removed all Phase 12/13 account linking code)
+- [x] Reverted to previous version without account linking dialogs
+- [x] Verified build passes
 
 ---
 
@@ -205,5 +207,6 @@ List {
 - All views use platform-aware modifiers for iOS/macOS compatibility
 - Avatar images are stored in Firebase Storage (not local temp files)
 - Toolbar buttons use SF Symbols (checkmark/xmark) for visual consistency
-- **Note**: Account linking with conflict dialogs was rolled back to simplify the implementation
-- `AccountLinkConflictDialog` provided as optional pre-built dialog component (Phase 11 implementation)
+- Account linking with conflict dialogs was rolled back in Phase 12 to simplify the implementation
+- `AuthenticationLinkResult.swift` was created in Phase 10 and removed in Phase 12
+- `AccountLinkConflictDialog` provided as optional pre-built dialog component (available but not integrated)

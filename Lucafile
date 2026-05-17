@@ -13,6 +13,7 @@ skills:
     name: firebase-auth-basics
   - repository: firebase/agent-skills
     name: firebase-security-rules-auditor
+  - repository: peterfriese/Stratos
 
 agents:
   - opencode

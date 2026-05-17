@@ -10,17 +10,18 @@
 //
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 import SwiftUI
 import os.log
-import FirebaseAuth
 
 struct NameEditView: View {
+  @Environment(AccountService.self) private var accountService
   @Environment(AuthenticationService.self) private var authenticationService
   @Environment(\.dismiss) private var dismiss
 
@@ -80,7 +81,7 @@ struct NameEditView: View {
   }
 
   private func loadCurrentName() {
-    guard let displayName = authenticationService.currentUser?.displayName else { return }
+    guard let displayName = authenticationService.userDisplayName else { return }
     let components = displayName.split(separator: " ", maxSplits: 1)
     if components.count >= 2 {
       firstName = String(components[0])
@@ -95,17 +96,8 @@ struct NameEditView: View {
     errorMessage = nil
 
     do {
-      guard let user = Auth.auth().currentUser else {
-        errorMessage = "User not authenticated"
-        isSaving = false
-        return
-      }
-
       let fullName = [firstName, lastName].filter { !$0.isEmpty }.joined(separator: " ")
-      let changeRequest = user.createProfileChangeRequest()
-      changeRequest.displayName = fullName.isEmpty ? nil : fullName
-      try await changeRequest.commitChanges()
-
+      try await accountService.updateDisplayName(fullName)
       dismiss()
     } catch {
       logger.error("Failed to update name: \(error.localizedDescription)")
@@ -119,6 +111,7 @@ struct NameEditView: View {
 #Preview {
   NavigationStack {
     NameEditView()
+      .environment(AccountService.shared)
       .environment(AuthenticationService.shared)
   }
 }

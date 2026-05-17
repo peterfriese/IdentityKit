@@ -10,11 +10,12 @@
 //
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 import SwiftUI
 import NukeUI
@@ -25,18 +26,7 @@ struct PersonalInformationView: View {
   @State private var showingAvatarEdit = false
   @State private var showingNameEdit = false
   @State private var showingEmailEdit = false
-
-  private var userDisplayName: String? {
-    authenticationService.currentUser?.displayName
-  }
-
-  private var userEmail: String? {
-    authenticationService.currentUser?.email
-  }
-
-  private var userPhotoURL: URL? {
-    authenticationService.currentUser?.photoURL
-  }
+  @State private var showingPasswordEdit = false
 
   var body: some View {
     List {
@@ -63,7 +53,7 @@ struct PersonalInformationView: View {
             Text("Name")
               .foregroundStyle(.primary)
             Spacer()
-            Text(userDisplayName ?? "Not set")
+            Text(authenticationService.userDisplayName ?? "Not set")
               .foregroundStyle(.secondary)
             Image(systemName: "chevron.right")
               .font(.caption.weight(.semibold))
@@ -78,8 +68,26 @@ struct PersonalInformationView: View {
             Text("Email")
               .foregroundStyle(.primary)
             Spacer()
-            Text(userEmail ?? "Not set")
+            Text(authenticationService.userEmail ?? "Not set")
               .foregroundStyle(.secondary)
+            Image(systemName: "chevron.right")
+              .font(.caption.weight(.semibold))
+              .foregroundStyle(.tertiary)
+          }
+        }
+
+        Button {
+          showingPasswordEdit = true
+        } label: {
+          HStack {
+            Text("Password")
+              .foregroundStyle(.primary)
+            Spacer()
+            if !hasPasswordProvider {
+              Text(passwordRowSubtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
             Image(systemName: "chevron.right")
               .font(.caption.weight(.semibold))
               .foregroundStyle(.tertiary)
@@ -93,18 +101,27 @@ struct PersonalInformationView: View {
     .sheet(isPresented: $showingAvatarEdit) {
       NavigationStack {
         AvatarEditView()
+          .environment(AccountService.shared)
           .environment(authenticationService)
       }
     }
     .sheet(isPresented: $showingNameEdit) {
       NavigationStack {
         NameEditView()
+          .environment(AccountService.shared)
           .environment(authenticationService)
       }
     }
     .sheet(isPresented: $showingEmailEdit) {
       NavigationStack {
         EmailEditView()
+          .environment(AccountService.shared)
+          .environment(authenticationService)
+      }
+    }
+    .sheet(isPresented: $showingPasswordEdit) {
+      NavigationStack {
+        PasswordEditView(mode: hasPasswordProvider ? .changePassword : .setPassword)
           .environment(authenticationService)
       }
     }
@@ -112,7 +129,7 @@ struct PersonalInformationView: View {
 
   @ViewBuilder
   private var avatarImage: some View {
-    if let photoURL = userPhotoURL {
+    if let photoURL = authenticationService.userPhotoURL {
       LazyImage(url: photoURL) { state in
         if let image = state.image {
           image
@@ -135,6 +152,17 @@ struct PersonalInformationView: View {
       .foregroundStyle(.secondary)
       .frame(width: 100, height: 100)
       .background(Color.gray.opacity(0.2))
+  }
+
+  private var hasPasswordProvider: Bool {
+    guard let providerData = authenticationService.currentUser?.providerData else {
+      return false
+    }
+    return providerData.contains { $0.providerID == "password" || $0.providerID == "email" }
+  }
+
+  private var passwordRowSubtitle: String {
+    hasPasswordProvider ? "" : "Add a password to your account"
   }
 }
 

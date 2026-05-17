@@ -89,6 +89,36 @@ When IdentityKit is used as a local Tuist project, a `Project.swift` file must e
 
 - After completing any task, update README.md if needed
 - If adding new public APIs, document them
+- Track new features and technical debt in BACKLOG.md
+
+### Implementation Planning
+
+When starting work on a new feature, create an `IMPLEMENTATION_PLAN.md` file:
+
+1. **Structure**: Each feature gets its own `IMPLEMENTATION_PLAN.md` with detailed phases and tasks
+2. **Naming**: Use format `IMPLEMENTATION_PLAN_<feature>.md` (e.g., `IMPLEMENTATION_PLAN_auth_flow.md`)
+3. **Link from BACKLOG.md**: Reference the plan in the backlog table
+4. **Phase tracking**: Use `[x]` / `[ ]` checkboxes to mark completed/incomplete phases
+
+Example structure:
+```markdown
+# Feature Name - Implementation Plan
+
+## Overview
+Brief description of the feature
+
+## Implementation Phases
+- [ ] Phase 1: Setup
+- [ ] Phase 2: Core implementation
+- [ ] Phase 3: Testing
+
+## Files
+| File | Purpose |
+|------|---------|
+| ... | ... |
+```
+
+This keeps detailed planning separate from the high-level backlog, making it easy for team members and agents to understand current work.
 
 ### Prohibited Technologies
 

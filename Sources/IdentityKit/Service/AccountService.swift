@@ -35,9 +35,51 @@ extension NSError {
 final public class AccountService {
   public static let shared = AccountService()
 
+  private let authenticationService = AuthenticationService.shared
+
   private init() { }
 
   deinit { }
+
+  public func refreshUser() {
+    authenticationService.refreshUser()
+  }
+
+  public func updateDisplayName(_ displayName: String) async throws {
+    guard let user = Auth.auth().currentUser else {
+      throw AuthenticationError.invalidCredentials
+    }
+
+    let changeRequest = user.createProfileChangeRequest()
+    changeRequest.displayName = displayName.isEmpty ? nil : displayName
+    try await changeRequest.commitChanges()
+    refreshUser()
+  }
+
+  public func updateEmail(_ email: String) async throws {
+    guard let user = Auth.auth().currentUser else {
+      throw AuthenticationError.invalidCredentials
+    }
+
+    do {
+      try await user.updateEmail(to: email)
+      refreshUser()
+    }
+    catch let error as NSError where error.requiresReauthentication {
+      throw AuthenticationError.reauthenticationRequired
+    }
+  }
+
+  public func updatePhotoURL(_ url: URL) async throws {
+    guard let user = Auth.auth().currentUser else {
+      throw AuthenticationError.invalidCredentials
+    }
+
+    let changeRequest = user.createProfileChangeRequest()
+    changeRequest.photoURL = url
+    try await changeRequest.commitChanges()
+    refreshUser()
+  }
 
   public func deleteAccount() async throws {
     guard let user = Auth.auth().currentUser else {

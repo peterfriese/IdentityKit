@@ -15,22 +15,29 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
 import SwiftUI
 
 struct AuthenticateWithGoogleButton: View {
-  // MARK: - Dependencies
   @Environment(AuthenticationService.self) private var authenticationService
   @Environment(\.dismiss) var dismiss
 
-  // MARK: - State
   @State private var isAuthenticating = false
   @State private var errorMessage: String?
 
   private var mode: AuthenticationMode
+  private var onSuccess: (() -> Void)?
+  private var onFailure: ((Error) -> Void)?
 
-  init(_ mode: AuthenticationMode = .continue) {
+  init(
+    _ mode: AuthenticationMode = .continue,
+    onSuccess: (() -> Void)? = nil,
+    onFailure: ((Error) -> Void)? = nil
+  ) {
     self.mode = mode
+    self.onSuccess = onSuccess
+    self.onFailure = onFailure
   }
 
   private var googleLogo: Image {
@@ -46,7 +53,6 @@ struct AuthenticateWithGoogleButton: View {
       isAuthenticating = true
     } label: {
       ViewThatFits(in: .horizontal) {
-        // First attempt: show both logo and text
         HStack(spacing: 8) {
           googleLogo
             .resizable()
@@ -58,8 +64,6 @@ struct AuthenticateWithGoogleButton: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
-
-        // Fallback: show only the logo
 
         googleLogo
           .resizable()
@@ -88,12 +92,22 @@ struct AuthenticateWithGoogleButton: View {
       do {
         let success = try await authenticationService.signInWithGoogle()
         if success {
-          dismiss()
+          if let onSuccess {
+            onSuccess()
+          } else {
+            dismiss()
+          }
         }
-      } catch let error as AuthenticationError {
-        errorMessage = error.localizedDescription
       } catch {
-        errorMessage = error.localizedDescription
+        if let onFailure {
+          onFailure(error)
+        } else {
+          if let error = error as? AuthenticationError {
+            errorMessage = error.localizedDescription
+          } else {
+            errorMessage = error.localizedDescription
+          }
+        }
       }
     }
   }
