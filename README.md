@@ -404,6 +404,16 @@ When using remote mode, also add to `Tuist/Package.swift`:
 .package(url: "https://github.com/peterfriese/IdentityKit.git", from: "0.4.1"),
 ```
 
+## Documentation
+
+| File | Purpose |
+|------|---------|
+| `README.md` | Package documentation and setup |
+| `BACKLOG.md` | Feature backlog and technical debt |
+| `IMPLEMENTATION_PLAN.md` | Detailed plan for current feature |
+| `AGENTS.md` | Agent guidelines and process |
+| `CHANGELOG.md` | Version history |
+
 ## Contribution
 
 Contributions are welcome! Please feel free to submit a Pull Request. 

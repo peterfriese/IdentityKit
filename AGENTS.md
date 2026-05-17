@@ -89,6 +89,7 @@ When IdentityKit is used as a local Tuist project, a `Project.swift` file must e
 
 - After completing any task, update README.md if needed
 - If adding new public APIs, document them
+- Track new features and technical debt in BACKLOG.md
 
 ### Prohibited Technologies
 
