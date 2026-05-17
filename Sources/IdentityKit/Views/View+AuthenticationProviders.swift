@@ -18,6 +18,10 @@
 
 import SwiftUI
 
+/// Supported authentication providers.
+///
+/// This enum defines the available authentication methods that can be
+/// configured for the authentication flow.
 public enum AuthenticationProvider {
   case email
   case google

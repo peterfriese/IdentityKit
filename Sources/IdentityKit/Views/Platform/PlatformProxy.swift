@@ -18,6 +18,17 @@
 
 import SwiftUI
 
+/// A wrapper for platform-specific SwiftUI view extensions.
+///
+/// This type provides a fluent interface for applying platform-specific styling
+/// and behavior to views in a cross-platform manner.
+///
+/// ## Topics
+/// ### Initializers
+/// - ``init(_:)``
+///
+/// ### Properties
+/// - ``content``
 public struct PlatformProxy<Content> {
     public let content: Content
 
@@ -32,12 +43,19 @@ extension View {
     }
 }
 
+/// Platform-specific title display modes for navigation views.
+///
+/// This enum provides cross-platform support for title display behavior.
 public enum PlatformTitleDisplayMode: Sendable {
     case automatic
     case inline
     case large
 }
 
+/// Platform-specific text input autocapitalization behavior.
+///
+/// This enum provides cross-platform support for controlling text input
+/// capitalization behavior.
 public enum PlatformTextInputAutocapitalization: Sendable {
   case never
   case sentences
@@ -45,6 +63,9 @@ public enum PlatformTextInputAutocapitalization: Sendable {
   case allCharacters
 }
 
+/// Platform-specific list styles.
+///
+/// This enum provides cross-platform support for list styling.
 public enum PlatformListStyle: Sendable {
     case insetGrouped
 }

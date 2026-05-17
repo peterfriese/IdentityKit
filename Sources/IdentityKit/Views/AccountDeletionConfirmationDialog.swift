@@ -17,11 +17,16 @@
 // limitations under the License.
 import SwiftUI
 
+/// The result of an account deletion confirmation dialog.
 public enum AccountDeletionConfirmationResult {
   case cancel
   case confirm
 }
 
+/// A dialog view for confirming account deletion.
+///
+/// This view presents a confirmation dialog to the user before they delete their account,
+/// ensuring they understand the permanent consequences of account deletion.
 public struct AccountDeletionConfirmationDialog: View {
   @Environment(\.dismiss) var dismiss
 

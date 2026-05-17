@@ -1,5 +1,29 @@
 import Foundation
 
+/// An error that can occur during authentication operations.
+///
+/// This enum covers various authentication scenarios including sign-in failures,
+/// credential issues, Apple/Google authentication problems, and storage errors.
+///
+/// ## Topics
+/// ### Error Cases
+/// - ``signInFailed(underlying:)``
+/// - ``signUpFailed(underlying:)``
+/// - ``invalidCredentials``
+/// - ``credentialAlreadyInUse(underlying:)``
+/// - ``missingAppleIDToken``
+/// - ``missingAuthorizationCode``
+/// - ``appleAuthenticationFailed``
+/// - ``userDeletionFailed(underlying:)``
+/// - ``reauthenticationRequired``
+/// - ``tokenRevocationFailed(underlying:)``
+/// - ``upgradeCancelled``
+/// - ``googleSignInFailed(underlying:)``
+/// - ``googleSignInCancelled``
+/// - ``missingGoogleIDToken``
+/// - ``storageNotEnabled``
+/// - ``uploadFailed(underlying:)``
+/// - ``storageError(underlying:)``
 public enum AuthenticationError: LocalizedError {
   case signInFailed(underlying: Error)
   case signUpFailed(underlying: Error)

@@ -25,6 +25,19 @@ import UIKit
 import AppKit
 #endif
 
+/// A service for managing avatar image storage using Firebase Storage.
+///
+/// This service handles uploading, resizing, and deleting user avatar images.
+/// Images are resized to a maximum dimension of 512px and compressed to 80% JPEG quality.
+///
+/// ## Topics
+/// ### Initializers
+/// - ``init()``
+/// - ``shared``
+///
+/// ### Methods
+/// - ``uploadAvatar(imageData:for:)``
+/// - ``deleteAvatar(for:)``
 @MainActor
 @Observable
 final public class StorageService {

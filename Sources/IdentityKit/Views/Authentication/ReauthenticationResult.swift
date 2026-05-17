@@ -19,6 +19,10 @@
 
 import Foundation
 
+/// The result of a reauthentication attempt.
+///
+/// This enum represents the possible outcomes of a user reauthentication flow,
+/// including success, cancellation, and failure with an associated error.
 public enum ReauthenticationResult: Sendable {
   case success
   case cancelled

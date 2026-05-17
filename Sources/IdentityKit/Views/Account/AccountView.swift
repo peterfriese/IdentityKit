@@ -20,6 +20,15 @@ import SwiftUI
 import os.log
 import NukeUI
 
+/// A SwiftUI view for displaying and managing user account information.
+///
+/// This view provides a complete account management experience including
+/// profile display, editing capabilities, sign-out functionality, and account deletion.
+/// It supports guest account detection and account upgrade flows.
+///
+/// ## Topics
+/// ### Initializers
+/// - ``init(authenticationProviders:onUpgradeFailed:)``
 @MainActor
 public struct AccountView: View {
   @Environment(AuthenticationService.self) private var authenticationService

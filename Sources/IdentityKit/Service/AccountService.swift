@@ -30,6 +30,26 @@ extension NSError {
   }
 }
 
+/// A service for managing user account operations.
+///
+/// This service provides methods for updating user profile information including
+/// display name, email, photo URL, and account deletion. It requires a signed-in user
+/// for all operations.
+///
+/// ## Topics
+/// ### Initializers
+/// - ``init()``
+/// - ``shared``
+///
+/// ### Properties
+/// None
+///
+/// ### Methods
+/// - ``refreshUser()``
+/// - ``updateDisplayName(_:)``
+/// - ``updateEmail(_:)``
+/// - ``updatePhotoURL(_:)``
+/// - ``deleteAccount()``
 @MainActor
 @Observable
 final public class AccountService {
@@ -61,13 +81,8 @@ final public class AccountService {
       throw AuthenticationError.invalidCredentials
     }
 
-    do {
-      try await user.updateEmail(to: email)
-      refreshUser()
-    }
-    catch let error as NSError where error.requiresReauthentication {
-      throw AuthenticationError.reauthenticationRequired
-    }
+    try await user.sendEmailVerification(beforeUpdatingEmail: email)
+    refreshUser()
   }
 
   public func updatePhotoURL(_ url: URL) async throws {
