@@ -4,16 +4,51 @@
 
 _(No active feature - see backlog below)_
 
-## Backlog
+## Implementation Phases
+
+### Phase 1: Critical Fixes
 
 | Priority | Feature | Status | Implementation Plan |
 |----------|---------|--------|---------------------|
-| High | Password linking for social accounts | Not Started | - |
-| High | Set password UI for social accounts | Not Started | - |
-| High | Email pre-population in reauthentication mode | Not Started | - |
-| Medium | Password validation debounce race condition fix | Not Started | - |
-| Medium | Email/Password Reauthentication UI for macOS | Not Started | - |
-| Low | [Future feature] | Not Started | - |
+| Critical | Add docc comments to all public APIs | Not Started | Phase 1 - Document all public types, methods, add @unstable markers |
+| Critical | Fix deprecated `updateEmail(to:)` API | Not Started | Phase 1 - Use `sendEmailVerification(beforeUpdatingEmail:)` |
+| Critical | Fix typo `errorMesage` → `errorMessage` | Not Started | Phase 1 - EmailPasswordAuthenticationView.swift:41 |
+| Critical | Configure docc generation | Not Started | Phase 1 - Add docc to Package.swift or CI workflow |
+
+### Phase 2: Platform Parity
+
+| Priority | Feature | Status | Implementation Plan |
+|----------|---------|--------|---------------------|
+| High | macOS email/password reauthentication UI | Not Started | Phase 2 - Remove #if canImport(UIKit) guard |
+| High | Enable macOS account deletion | Not Started | Phase 2 - Implement EmailPasswordDeleteUserOperation for macOS |
+
+### Phase 3: Backlog (Existing Items)
+
+| Priority | Feature | Status | Implementation Plan |
+|----------|---------|--------|---------------------|
+| High | Password linking for social accounts | Not Started | Phase 3 - Use `link()` instead of `updatePassword()` |
+| High | Set password UI for social accounts | Not Started | Phase 3 - Enable form in PasswordEditView for Apple/Google |
+| High | Email pre-population in reauthentication mode | Not Started | Phase 3 - Populate email field from currentUser |
+| Medium | Password validation debounce race condition fix | Not Started | Phase 3 - Add task cancellation in validation |
+
+### Phase 4: Testing
+
+| Priority | Feature | Status | Implementation Plan |
+|----------|---------|--------|---------------------|
+| High | PasswordValidator tests | Not Started | Phase 4 - New file: PasswordValidatorTests.swift |
+| High | AuthenticationError tests | Not Started | Phase 4 - New file: AuthenticationErrorTests.swift |
+| High | AuthenticationService state tests | Not Started | Phase 4 - New file: AuthenticationServiceTests.swift |
+| High | AccountService tests | Not Started | Phase 4 - New file: AccountServiceTests.swift |
+
+### Phase 5: Documentation & Polish
+
+| Priority | Feature | Status | Implementation Plan |
+|----------|---------|--------|---------------------|
+| Medium | Update README with new APIs | Not Started | Phase 5 - Document all public APIs |
+| Medium | Update BACKLOG.md | Not Started | Phase 5 - Reflect completed items |
+| Medium | Add API stability markers | Not Started | Phase 5 - Add @unstable to docc comments |
+
+---
 
 ## Technical Debt
 
@@ -25,6 +60,11 @@ _(No active feature - see backlog below)_
 | Set password UI hidden for social accounts (PR #27) | Not Started | PasswordEditView hides form in .setPassword mode for Apple/Google users |
 | Reauthentication email empty (PR #27) | Not Started | Email field not populated in reauthentication mode |
 | Password validation debounce race condition (PR #27) | Not Started | Tasks spawn without cancelling previous ones |
+| Public APIs lack documentation | Not Started | All public types and methods need docc comments |
+| Test suite empty | Not Started | Only placeholder test exists in IdentityKitTests.swift |
+| Typo: errorMesage | Not Started | EmailPasswordAuthenticationView.swift:41 |
+
+---
 
 ## Completed
 
@@ -34,6 +74,8 @@ _(No active feature - see backlog below)_
 | Password management | 2026-05-17 | Password policy, change password, password edit view |
 | Sign in with Apple fix (post-deletion re-auth) | 2026-05-16 | Fixed stale Firebase session issue after account deletion |
 | Firebase Storage for avatar upload | 2026-04-20 | Image upload/delete via Firebase Storage |
+
+---
 
 ## Documentation
 
