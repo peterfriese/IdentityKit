@@ -21,11 +21,13 @@ jobs:
 
       - name: Generate Documentation
         run: |
-          swift package --allow-writing-to-directory ./docs \
-            generate-documentation --target IdentityKit --output-path ./docs
+          swift package --allow-writing-to-directory .build/documentation \
+            generate-documentation --target IdentityKit --disable-indexing \
+            --transform-for-static-hosting --hosting-base-path IdentityKit \
+            --output-path .build/documentation
 
       - name: Upload Documentation
         uses: actions/upload-artifact@v4
         with:
           name: documentation
-          path: ./docs
+          path: .build/documentation

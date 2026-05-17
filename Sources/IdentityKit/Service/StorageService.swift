@@ -32,7 +32,6 @@ import AppKit
 ///
 /// ## Topics
 /// ### Initializers
-/// - ``init()``
 /// - ``shared``
 ///
 /// ### Methods

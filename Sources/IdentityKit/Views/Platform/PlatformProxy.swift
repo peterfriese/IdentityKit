@@ -25,7 +25,6 @@ import SwiftUI
 ///
 /// ## Topics
 /// ### Initializers
-/// - ``init(_:)``
 ///
 /// ### Properties
 /// - ``content``

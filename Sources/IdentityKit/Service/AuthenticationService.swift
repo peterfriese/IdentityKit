@@ -67,7 +67,6 @@ public enum AuthenticationState {
 ///
 /// ## Topics
 /// ### Initializers
-/// - ``init()``
 /// - ``shared``
 ///
 /// ### Properties

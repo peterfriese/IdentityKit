@@ -38,7 +38,6 @@ extension NSError {
 ///
 /// ## Topics
 /// ### Initializers
-/// - ``init()``
 /// - ``shared``
 ///
 /// ### Properties
