@@ -8,6 +8,10 @@ _(No active feature - see backlog below)_
 
 | Priority | Feature | Status | Implementation Plan |
 |----------|---------|--------|---------------------|
+| High | Password linking for social accounts | Not Started | - |
+| High | Set password UI for social accounts | Not Started | - |
+| High | Email pre-population in reauthentication mode | Not Started | - |
+| Medium | Password validation debounce race condition fix | Not Started | - |
 | Medium | Email/Password Reauthentication UI for macOS | Not Started | - |
 | Low | [Future feature] | Not Started | - |
 
@@ -17,6 +21,10 @@ _(No active feature - see backlog below)_
 |-------|--------|-------|
 | Email/Password account deletion only works on iOS | Not Started | `#if canImport(UIKit)` guard in AccountService+Email.swift blocks on macOS |
 | Firebase `updateEmail(to:)` deprecated | Not Started | Should use `sendEmailVerification(beforeUpdatingEmail:)` instead |
+| Password linking for social accounts (PR #27) | Not Started | `updatePassword()` fails for users without password provider - use `link()` instead |
+| Set password UI hidden for social accounts (PR #27) | Not Started | PasswordEditView hides form in .setPassword mode for Apple/Google users |
+| Reauthentication email empty (PR #27) | Not Started | Email field not populated in reauthentication mode |
+| Password validation debounce race condition (PR #27) | Not Started | Tasks spawn without cancelling previous ones |
 
 ## Completed
 
