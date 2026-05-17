@@ -6,13 +6,21 @@ on:
   pull_request:
     branches: [main]
 
-# Allow the job to push to the gh-pages branch
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
-  docc:
+  deploy:
     name: Generate and Deploy Documentation
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: macos-latest
     steps:
       - name: Checkout
@@ -23,8 +31,18 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Deploy to GitHub Pages
-        uses: apple/swift-docc-plugin@v1
+      - name: Build DocC
+        run: |
+          swift package --allow-writing-to-directory .build/documentation \
+            generate-documentation --target IdentityKit --disable-indexing \
+            --transform-for-static-hosting --hosting-base-path IdentityKit \
+            --output-path .build/documentation
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          target: IdentityKit
-          hosting-base-path: IdentityKit
+          path: .build/documentation
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        id: deployment
