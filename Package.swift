@@ -16,7 +16,8 @@ let package = Package(
   dependencies: [
     .package(url: "https://github.com/firebase/firebase-ios-sdk", from: "12.0.0"),
     .package(url: "https://github.com/google/GoogleSignIn-iOS", from: "7.0.0"),
-    .package(url: "https://github.com/kean/Nuke", from: "12.0.0")
+    .package(url: "https://github.com/kean/Nuke", from: "12.0.0"),
+    .package(url: "https://github.com/apple/swift-docc-plugin.git", from: "1.1.0")
   ],
   targets: [
     .target(

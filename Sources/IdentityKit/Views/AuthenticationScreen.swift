@@ -28,12 +28,25 @@ struct AuthenticationErrorMessagePreferenceKey: PreferenceKey {
   }
 }
 
+/// The authentication flow type.
+///
+/// This enum determines the behavior and UI of the authentication screen,
+/// supporting login, sign-up, and reauthentication flows.
 public enum AuthenticationFlow: Sendable {
   case login
   case signUp
   case reauthentication
 }
 
+/// A SwiftUI screen for user authentication.
+///
+/// This view provides a complete authentication experience including sign-in,
+/// sign-up, and reauthentication flows. It supports multiple authentication
+/// providers including email/password, Apple, and Google.
+///
+/// ## Topics
+/// ### Initializers
+/// - ``init(flow:onReauthenticate:)``
 @MainActor
 public struct AuthenticationScreen {
   @Environment(AuthenticationService.self) private var authenticationService

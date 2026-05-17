@@ -38,7 +38,7 @@ struct EmailPasswordAuthenticationView {
   @State private var password = ""
   @State private var confirmPassword = ""
 
-  @State private var errorMesage = ""
+  @State private var errorMessage = ""
 
   @FocusState private var focus: FocusableField?
 
@@ -87,7 +87,7 @@ struct EmailPasswordAuthenticationView {
       if let onError {
         onError(error)
       } else {
-        errorMesage = error.localizedDescription
+        errorMessage = error.localizedDescription
       }
     }
   }
@@ -101,7 +101,7 @@ struct EmailPasswordAuthenticationView {
       if let onError {
         onError(error)
       } else {
-        errorMesage = error.localizedDescription
+        errorMessage = error.localizedDescription
       }
     }
   }
@@ -182,7 +182,7 @@ extension EmailPasswordAuthenticationView: View {
       .frame(maxWidth: .infinity)
       .buttonStyle(.borderedProminent)
     }
-    .preference(key: AuthenticationErrorMessagePreferenceKey.self, value: errorMesage)
+    .preference(key: AuthenticationErrorMessagePreferenceKey.self, value: errorMessage)
   }
 
   private func submitAction() async {

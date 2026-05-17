@@ -22,6 +22,10 @@ import os
 
 private let authLogger = Logger(subsystem: "dev.peterfriese.identitykit", category: "AuthenticationService")
 
+/// The type of authentication operation being performed.
+///
+/// This enum is used to track the current authentication operation type
+/// for logging and analytics purposes.
 public enum AuthenticationOperationType: String {
   case signIn
   case signUp
@@ -45,12 +49,41 @@ public enum AuthenticationMode: CustomStringConvertible {
   }
 }
 
+/// The current authentication mode for the authentication flow.
+///
+/// This determines what type of authentication UI to display and what
+/// validation rules to apply.
 public enum AuthenticationState {
   case unauthenticated
   case authenticating
   case authenticated
 }
 
+/// The main authentication service for IdentityKit.
+///
+/// This service manages user authentication state, provides methods for signing in,
+/// signing up, and linking accounts with various identity providers. It integrates
+/// with Firebase Authentication and supports Apple, Google, and email/password authentication.
+///
+/// ## Topics
+/// ### Initializers
+/// - ``shared``
+///
+/// ### Properties
+/// - ``authenticationState``
+/// - ``isAuthenticated``
+/// - ``currentUser``
+/// - ``userDisplayName``
+/// - ``userEmail``
+/// - ``userPhotoURL``
+/// - ``userIsEmailVerified``
+/// - ``userIsAnonymous``
+/// - ``isGuestAccount``
+///
+/// ### Methods
+/// - ``refreshUser()``
+/// - ``signOut()``
+/// - ``enableKeychainSharing(with:)``
 @available(macOS 14.0, *)
 @MainActor
 @Observable

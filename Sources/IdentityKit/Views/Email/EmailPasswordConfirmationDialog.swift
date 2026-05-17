@@ -23,6 +23,7 @@ import SwiftUI
 import FirebaseAuth
 import os.log
 
+/// Errors that can occur during email/password confirmation.
 public enum EmailPasswordConfirmationError: Error, LocalizedError {
   case rootViewControllerNotFound
 
@@ -36,10 +37,22 @@ public enum EmailPasswordConfirmationError: Error, LocalizedError {
 
 private let logger = Logger(subsystem: "dev.peterfriese.identitykit", category: "EmailPasswordConfirmation")
 
+/// Prompts the user to confirm their password using the system dialog.
+///
+/// This function presents a native password confirmation dialog to verify
+/// the user's identity before performing sensitive operations.
+///
+/// - Parameter email: The email address associated with the account.
+/// - Returns: The confirmed password string.
+/// - Throws: ``EmailPasswordConfirmationError`` if confirmation fails.
 public func confirmPassword(for email: String) async throws -> String {
   return try await EmailPasswordConfirmationDialog().confirmPassword(for: email)
 }
 
+/// A dialog for confirming user password using ASPasswordCredential.
+///
+/// This class presents a native system dialog to verify the user's identity
+/// before performing sensitive operations like email updates or account deletion.
 @MainActor
 public class EmailPasswordConfirmationDialog: NSObject {
   private var continuation: CheckedContinuation<String, Error>?

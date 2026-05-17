@@ -19,6 +19,26 @@
 
 import Foundation
 
+/// A policy defining password requirements for user authentication.
+///
+/// This struct specifies the constraints that passwords must meet including minimum
+/// and maximum length, and requirements for character types.
+///
+/// ## Topics
+/// ### Initializers
+/// - ``init(minLength:maxLength:requireUppercase:requireLowercase:requireNumeric:requireNonAlphanumeric:)``
+///
+/// ### Properties
+/// - ``minLength``
+/// - ``maxLength``
+/// - ``requireUppercase``
+/// - ``requireLowercase``
+/// - ``requireNumeric``
+/// - ``requireNonAlphanumeric``
+///
+/// ### Static Properties
+/// - ``standard``
+/// - ``firebaseDefault``
 public struct PasswordPolicy: Sendable {
   public let minLength: Int
   public let maxLength: Int
@@ -62,6 +82,10 @@ public struct PasswordPolicy: Sendable {
   )
 }
 
+/// The result of validating a password against a policy.
+///
+/// This struct indicates whether a password meets all requirements and lists
+/// any missing requirements if validation failed.
 public struct PasswordValidationResult: Sendable {
   public let isValid: Bool
   public let missingRequirements: [PasswordRequirement]
@@ -72,6 +96,10 @@ public struct PasswordValidationResult: Sendable {
   }
 }
 
+/// Individual password validation requirements.
+///
+/// These cases represent the different types of requirements that a password
+/// must satisfy based on the policy.
 public enum PasswordRequirement: String, CaseIterable, Sendable {
   case minLength
   case maxLength
@@ -81,6 +109,19 @@ public enum PasswordRequirement: String, CaseIterable, Sendable {
   case nonAlphanumeric
 }
 
+/// A validator for checking passwords against a policy.
+///
+/// This struct provides methods to validate passwords and generate human-readable
+/// descriptions of requirements.
+///
+/// ## Topics
+/// ### Initializers
+/// - ``init(policy:)``
+///
+/// ### Methods
+/// - ``validate(_:)``
+/// - ``description(for:)``
+/// - ``requirements(for:)``
 public struct PasswordValidator: Sendable {
   private let policy: PasswordPolicy
 
