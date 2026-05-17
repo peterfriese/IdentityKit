@@ -4,7 +4,7 @@
 
 | Feature | Status | Implementation Plan |
 |---------|--------|---------------------|
-| AccountView Redesign | In Progress | See `docs/IMPLEMENTATION_PLAN.md` |
+| AccountView Redesign | In Progress | See `docs/IMPLEMENTATION_PLAN_account_view.md` |
 
 ## Backlog
 
