@@ -19,14 +19,13 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Build Package
-        run: swift build
-
       - name: Generate Documentation
-        run: swift package generate-documentation --output-path .build/documentation
+        run: |
+          swift package --allow-writing-to-directory ./docs \
+            generate-documentation --target IdentityKit --output-path ./docs
 
       - name: Upload Documentation
         uses: actions/upload-artifact@v4
         with:
           name: documentation
-          path: .build/documentation
+          path: ./docs
