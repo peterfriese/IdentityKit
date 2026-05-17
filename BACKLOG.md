@@ -10,10 +10,10 @@ _(No active feature - see backlog below)_
 
 | Priority | Feature | Status | Implementation Plan |
 |----------|---------|--------|---------------------|
-| Critical | Add docc comments to all public APIs | Not Started | Phase 1 - Document all public types, methods, add @unstable markers |
-| Critical | Fix deprecated `updateEmail(to:)` API | Not Started | Phase 1 - Use `sendEmailVerification(beforeUpdatingEmail:)` |
-| Critical | Fix typo `errorMesage` → `errorMessage` | Not Started | Phase 1 - EmailPasswordAuthenticationView.swift:41 |
-| Critical | Configure docc generation | Not Started | Phase 1 - Add docc to Package.swift or CI workflow |
+| Critical | Add docc comments to all public APIs | Completed | Phase 1 - Document all public types, methods, add @unstable markers |
+| Critical | Fix deprecated `updateEmail(to:)` API | Completed | Phase 1 - Use `sendEmailVerification(beforeUpdatingEmail:)` |
+| Critical | Fix typo `errorMesage` → `errorMessage` | Completed | Phase 1 - EmailPasswordAuthenticationView.swift:41 |
+| Critical | Configure docc generation | Completed | Phase 1 - Add docc to Package.swift or CI workflow |
 
 ### Phase 2: Platform Parity
 
@@ -55,14 +55,14 @@ _(No active feature - see backlog below)_
 | Issue | Status | Notes |
 |-------|--------|-------|
 | Email/Password account deletion only works on iOS | Not Started | `#if canImport(UIKit)` guard in AccountService+Email.swift blocks on macOS |
-| Firebase `updateEmail(to:)` deprecated | Not Started | Should use `sendEmailVerification(beforeUpdatingEmail:)` instead |
+| Firebase `updateEmail(to:)` deprecated | Completed | Should use `sendEmailVerification(beforeUpdatingEmail:)` instead |
 | Password linking for social accounts (PR #27) | Not Started | `updatePassword()` fails for users without password provider - use `link()` instead |
 | Set password UI hidden for social accounts (PR #27) | Not Started | PasswordEditView hides form in .setPassword mode for Apple/Google users |
 | Reauthentication email empty (PR #27) | Not Started | Email field not populated in reauthentication mode |
 | Password validation debounce race condition (PR #27) | Not Started | Tasks spawn without cancelling previous ones |
-| Public APIs lack documentation | Not Started | All public types and methods need docc comments |
+| Public APIs lack documentation | Completed | All public types and methods need docc comments |
 | Test suite empty | Not Started | Only placeholder test exists in IdentityKitTests.swift |
-| Typo: errorMesage | Not Started | EmailPasswordAuthenticationView.swift:41 |
+| Typo: errorMesage | Completed | EmailPasswordAuthenticationView.swift:41 |
 
 ---
 
@@ -70,6 +70,7 @@ _(No active feature - see backlog below)_
 
 | Feature | Date | Notes |
 |---------|------|-------|
+| Phase 1: Critical Fixes | 2026-05-17 | Docc comments, fix deprecated API, typo fix, CI docc deployment |
 | AccountView Redesign | 2026-05-17 | Complete UI overhaul with drill-down navigation |
 | Password management | 2026-05-17 | Password policy, change password, password edit view |
 | Sign in with Apple fix (post-deletion re-auth) | 2026-05-16 | Fixed stale Firebase session issue after account deletion |
