@@ -81,8 +81,13 @@ final public class AccountService {
       throw AuthenticationError.invalidCredentials
     }
 
-    try await user.sendEmailVerification(beforeUpdatingEmail: email)
-    refreshUser()
+    do {
+      try await user.sendEmailVerification(beforeUpdatingEmail: email)
+      refreshUser()
+    }
+    catch let error as NSError where error.requiresReauthentication {
+      throw AuthenticationError.reauthenticationRequired
+    }
   }
 
   public func updatePhotoURL(_ url: URL) async throws {
