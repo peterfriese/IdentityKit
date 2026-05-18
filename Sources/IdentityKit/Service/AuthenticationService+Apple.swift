@@ -60,7 +60,7 @@ extension AuthenticationService {
     do {
       // Check if current user is anonymous - only allow linking from anonymous users
       let currentUser = Auth.auth().currentUser
-      let isAnonymous = currentUser?.isAnonymous ?? true
+      let isAnonymous = currentUser?.isAnonymous == true
 
       if isAnonymous {
         // Link the credential to anonymous user

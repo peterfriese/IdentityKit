@@ -35,7 +35,7 @@ extension AuthenticationService {
     authenticationState = .authenticating
 
     let currentUser = Auth.auth().currentUser
-    let isAnonymous = currentUser?.isAnonymous ?? true
+    let isAnonymous = currentUser?.isAnonymous == true
 
     do {
       let credential = EmailAuthProvider.credential(withEmail: email, password: password)
