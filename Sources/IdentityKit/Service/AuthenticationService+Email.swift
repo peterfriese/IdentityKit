@@ -33,9 +33,21 @@ extension AuthenticationService {
 
   public func signUp(withEmail email: String, password: String) async throws {
     authenticationState = .authenticating
+
+    let currentUser = Auth.auth().currentUser
+    let isAnonymous = currentUser?.isAnonymous == true
+
     do {
       let credential = EmailAuthProvider.credential(withEmail: email, password: password)
-      try await link(with: credential)
+
+      if isAnonymous {
+        // Link the credential to anonymous user
+        try await link(with: credential)
+      } else {
+        // Non-anonymous user - can't sign up with email/password (would be linking to existing account)
+        // Instead, try to sign in with the credential
+        try await signIn(withEmail: email, password: password)
+      }
     }
     catch {
       authenticationState = .unauthenticated

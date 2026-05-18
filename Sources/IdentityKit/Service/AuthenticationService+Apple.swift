@@ -58,17 +58,18 @@ extension AuthenticationService {
                                                    fullName: appleIDCredential.fullName)
 
     do {
-      // Check if we have an existing authenticated non-guest user
-      let hasExistingUser = Auth.auth().currentUser != nil && !Auth.auth().currentUser!.isAnonymous
+      // Check if current user is anonymous - only allow linking from anonymous users
+      let currentUser = Auth.auth().currentUser
+      let isAnonymous = currentUser?.isAnonymous == true
 
-      if hasExistingUser {
-        // Link the credential to existing user
+      if isAnonymous {
+        // Link the credential to anonymous user
         try await link(with: credential)
         logger.info("Successfully linked Apple credential to Firebase user")
       } else {
-        // Sign in fresh - this is needed after account deletion to get a clean session
+        // Non-anonymous user - don't allow linking, sign in directly
         try await signIn(with: credential)
-        logger.info("Successfully signed in with Apple credential")
+        logger.info("Successfully signed in with Apple credential (non-anonymous user)")
       }
 
       // Force sync of auth state - Firebase's auth listener may not fire reliably
